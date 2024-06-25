@@ -191,6 +191,7 @@ def submit_question():
         
         try:
             with st.spinner("Processing your request..."):
+                logger.info(f"Invoking Bedrock Agent with input: {user_input}")
                 response = bedrock_client.invoke_agent(
                     agentId=BEDROCK_AGENT_ID,
                     agentAliasId=BEDROCK_AGENT_ALIAS,
@@ -198,15 +199,33 @@ def submit_question():
                     endSession=False,
                     inputText=user_input
                 )
+                logger.info("Bedrock Agent invoked successfully")
                 results = response.get("completion")
+                if not results:
+                    logger.error("No completion in Bedrock Agent response")
+                    raise ValueError("No completion in Bedrock Agent response")
+                
                 answer = ""
                 for stream in results:
-                    answer += process_stream(stream)
+                    processed = process_stream(stream)
+                    if processed:
+                        answer += processed
+                    else:
+                        logger.warning(f"Empty processed stream: {stream}")
+                
+                if not answer:
+                    logger.error("No answer generated from processed streams")
+                    raise ValueError("No answer generated from processed streams")
+                
                 st.session_state.conversation.append({'assistant': answer})
+                logger.info("Answer appended to conversation")
+            
             save_to_dynamodb(st.session_state.session_id, st.session_state.conversation)
+            logger.info("Conversation saved to DynamoDB")
         except Exception as e:
             st.error("An error occurred. Please try again later.")
-            logger.error(f"Exception when calling Bedrock Agent: {e}")
+            logger.error(f"Exception when calling Bedrock Agent: {str(e)}")
+            logger.exception("Full traceback:")
         finally:
             st.session_state.processing = False
 
