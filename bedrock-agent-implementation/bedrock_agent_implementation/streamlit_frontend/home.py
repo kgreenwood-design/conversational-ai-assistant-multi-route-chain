@@ -69,26 +69,6 @@ if os.path.exists('style.css'):
     except Exception as e:
         logger.error(f"Error loading custom CSS: {str(e)}")
 
-BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
-BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
-
-# Check if environment variables are set
-if not BEDROCK_AGENT_ALIAS or not BEDROCK_AGENT_ID:
-    st.error("BEDROCK_AGENT_ALIAS or BEDROCK_AGENT_ID environment variables are not set.")
-    st.stop()
-
-try:
-    bedrock_client = boto3.client('bedrock-agent-runtime')
-    dynamodb = boto3.resource('dynamodb')
-    table_name = os.environ.get('DYNAMODB_TABLE_NAME')
-    if not table_name:
-        st.error("DYNAMODB_TABLE_NAME environment variable is not set")
-        st.stop()
-    table = dynamodb.Table(table_name)
-except Exception as e:
-    st.error("Error initializing AWS clients. Please check your credentials and environment settings.")
-    logger.error(f"Error initializing AWS clients: {str(e)}")
-    st.stop()
 
 # Function to clear session state
 def clear_session_state():

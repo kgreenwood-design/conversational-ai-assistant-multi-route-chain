@@ -21,7 +21,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 from aws_cdk.custom_resources import Provider
-from bedrock_agent_implementation.utils.bedrock_utils import check_bedrock_availability
 
 ACCOUNT_ID = cdk.Aws.ACCOUNT_ID
 REGION = cdk.Aws.REGION
@@ -53,7 +52,6 @@ class BedrockAgentStack(Stack):
 
         try:
             logger.info("Initializing BedrockAgentStack")
-            check_bedrock_availability()
             custom_res_role = self.create_custom_resource_role()
             bedrock_agent_role = self.create_bedrock_agent_role(data_bucket)
             bedrock_kb_role = self.create_bedrock_kb_role()
