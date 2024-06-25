@@ -254,11 +254,6 @@ def clear_input():
     st.session_state.user_input = ""
     st.experimental_rerun()
 
-    elif authentication_status == False:
-        st.error('Username/password is incorrect')
-    elif authentication_status == None:
-        st.warning('Please enter your username and password')
-
 if __name__ == '__main__':
     main()
                     {'AttributeName': 'id', 'KeyType': 'HASH'}
