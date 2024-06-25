@@ -305,12 +305,8 @@ def main():
     with input_container:
         render_input()
 
-    # Ensure the conversation is always displayed
-    render_chat()
-
 def clear_input():
     st.session_state.user_input = ""
-    st.experimental_rerun()
 
 if __name__ == '__main__':
     main()
