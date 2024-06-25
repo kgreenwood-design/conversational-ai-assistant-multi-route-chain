@@ -748,7 +748,7 @@ class BedrockAgentStack(Stack):
         self.bedrock_agent_id = agent_id
         self.bedrock_agent_alias = agent_alias_id
 
-        logger.info("BedrockAgentStack initialization completed successfully")
-except Exception as e:
-    logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
-    raise
+            logger.info("BedrockAgentStack initialization completed successfully")
+        except Exception as e:
+            logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
+            raise
