@@ -83,19 +83,19 @@ except Exception as e:
     logger.error(f"Error initializing AWS clients: {str(e)}")
     st.stop()
 
-# Initialize session state
-if 'conversation' not in st.session_state:
+# Function to clear session state
+def clear_session_state():
     st.session_state.conversation = []
-if 'session_id' not in st.session_state:
     st.session_state.session_id = None
-if 'show_history' not in st.session_state:
     st.session_state.show_history = False
-if 'user_input' not in st.session_state:
     st.session_state.user_input = ""
-if 'processing' not in st.session_state:
     st.session_state.processing = False
-if 'feedback' not in st.session_state:
     st.session_state.feedback = {}
+
+# Initialize session state
+if 'initialized' not in st.session_state:
+    clear_session_state()
+    st.session_state.initialized = True
 
 def format_retrieved_references(references):
     formatted_output = ""
@@ -238,8 +238,12 @@ def main():
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
 
+    # Clear session state when the app starts
+    if st.sidebar.button("New Conversation"):
+        clear_session_state()
+
     # Initialize the agent session id if not already set
-    if 'session_id' not in st.session_state:
+    if st.session_state.session_id is None:
         st.session_state.session_id = session_generator()
 
     # Sidebar for conversation history and controls
