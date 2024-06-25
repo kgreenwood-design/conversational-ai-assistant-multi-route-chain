@@ -10,6 +10,7 @@ import logging
 from botocore.exceptions import ClientError
 import base64
 import time
+from boto3.dynamodb.conditions import Key
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -305,8 +306,30 @@ def main():
     with input_container:
         render_input()
 
+    # Add a button to verify DynamoDB entries
+    if st.sidebar.button("Verify DynamoDB Entries"):
+        verify_dynamodb_entries()
+
 def clear_input():
     st.session_state.user_input = ""
+
+def verify_dynamodb_entries():
+    try:
+        # Query the latest entries from DynamoDB
+        response = table.query(
+            KeyConditionExpression=Key('session_id').eq(st.session_state.session_id),
+            ScanIndexForward=False,
+            Limit=5
+        )
+        
+        if response['Items']:
+            st.sidebar.subheader("Latest DynamoDB Entries")
+            for item in response['Items']:
+                st.sidebar.json(item)
+        else:
+            st.sidebar.warning("No entries found for the current session.")
+    except Exception as e:
+        st.sidebar.error(f"Error querying DynamoDB: {str(e)}")
 
 if __name__ == '__main__':
     main()
