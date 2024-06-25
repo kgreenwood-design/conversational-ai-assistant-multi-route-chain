@@ -228,6 +228,9 @@ def submit_question():
             logger.exception("Full traceback:")
         finally:
             st.session_state.processing = False
+        
+        # Force a rerun to update the UI
+        st.experimental_rerun()
 
 def main():
     st.title("Analogic Product Support AI")
@@ -293,6 +296,9 @@ def main():
             render_chat()
         with input_container:
             render_input()
+    
+    # Add this line to ensure the conversation is always displayed
+    render_chat()
 
 def clear_input():
     st.session_state.user_input = ""
