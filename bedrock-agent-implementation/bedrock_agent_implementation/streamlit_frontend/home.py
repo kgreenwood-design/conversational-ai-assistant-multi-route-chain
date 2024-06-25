@@ -263,7 +263,7 @@ def main():
     ensure_dynamodb_table_exists()
 
     # Authentication
-    name, authentication_status, username = authenticator.login(fields={'form_name': 'Login'}, location='main')
+    name, authentication_status, username = authenticator.login('Login', 'main')
 
     if authentication_status:
         authenticator.logout('Logout', 'sidebar')
