@@ -257,40 +257,18 @@ def main():
 
     # Sidebar for conversation history and controls
     st.sidebar.title("Conversation Controls")
-    if st.sidebar.button("Toggle History"):
-        st.session_state.show_history = not st.session_state.show_history
     if st.sidebar.button("Clear History"):
         st.session_state.conversation = []
         st.session_state.session_id = session_generator()
+        st.session_state.feedback = {}
+        st.experimental_rerun()
 
-    # Option to reverse rendering
-    reverse_rendering = st.sidebar.checkbox("Reverse Rendering")
+    # Render sidebar history
+    render_sidebar_history()
 
     # Main chat interface
     chat_container = st.container()
     input_container = st.container()
-
-    def render_chat():
-        for idx, interaction in enumerate(st.session_state.conversation):
-            if 'user' in interaction:
-                st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
-            elif 'assistant' in interaction:
-                st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
-                col1, col2, col3 = st.columns([1, 1, 5])
-                with col1:
-                    if st.button("👍", key=f"thumbs_up_{idx}"):
-                        provide_feedback(idx, "positive")
-                with col2:
-                    if st.button("👎", key=f"thumbs_down_{idx}"):
-                        provide_feedback(idx, "negative")
-
-    def render_sidebar_history():
-        st.sidebar.title("Conversation History")
-        for idx, interaction in enumerate(st.session_state.conversation):
-            if 'user' in interaction:
-                st.sidebar.text(f"You: {interaction['user'][:30]}...")
-            elif 'assistant' in interaction:
-                st.sidebar.text(f"Assistant: {interaction['assistant'][:30]}...")
 
     def render_input():
         st.text_area("Ask a question:", key="user_input", height=50, on_change=None)
@@ -301,8 +279,11 @@ def main():
             with st.expander("Options", expanded=False):
                 if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
                     pass
-                if st.button("Clear History", key="clear_history_button", use_container_width=True):
-                    st.session_state.conversation = []
+
+    with chat_container:
+        render_chat()
+    with input_container:
+        render_input()
                     st.session_state.session_id = session_generator()
                     st.session_state.feedback = {}
                     st.experimental_rerun()
