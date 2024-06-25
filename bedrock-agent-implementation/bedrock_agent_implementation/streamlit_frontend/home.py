@@ -11,6 +11,9 @@ from botocore.exceptions import ClientError
 import base64
 import time
 from boto3.dynamodb.conditions import Key
+import yaml
+from yaml.loader import SafeLoader
+import streamlit_authenticator as stauth
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -19,7 +22,37 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
+# Load configuration file
+with open('config.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
+
+# Create an authentication object
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['preauthorized']
+)
+
+# Initialize session state for authentication
+if 'authentication_status' not in st.session_state:
+    st.session_state['authentication_status'] = None
+
 st.set_page_config(page_title="Analogic Product Support- Development", layout="wide")
+
+# Authentication
+name, authentication_status, username = authenticator.login('Login', 'main')
+
+if authentication_status == False:
+    st.error('Username/password is incorrect')
+    st.stop()
+elif authentication_status == None:
+    st.warning('Please enter your username and password')
+    st.stop()
+elif authentication_status:
+    st.success(f'Welcome *{name}*')
+    authenticator.logout('Logout', 'main')
 
 # Load and display logo
 def add_logo(image_file):
@@ -259,63 +292,64 @@ def render_sidebar_history():
             st.sidebar.text(f"Assistant: {interaction['assistant'][:30]}...")
 
 def main():
-    # Title is now set in st.set_page_config, so we can remove this line
+    if st.session_state['authentication_status']:
+        # Ensure DynamoDB table exists
+        ensure_dynamodb_table_exists()
 
-    # Ensure DynamoDB table exists
-    ensure_dynamodb_table_exists()
+        # Add refresh button
+        if st.sidebar.button("Refresh Page"):
+            st.experimental_set_query_params(refresh='true')
+            st.experimental_rerun()
 
-    # Add refresh button
-    if st.sidebar.button("Refresh Page"):
-        st.experimental_set_query_params(refresh='true')
-        st.experimental_rerun()
+        # Clear session state when the app starts
+        if st.sidebar.button("New Conversation"):
+            clear_session_state()
 
-    # Clear session state when the app starts
-    if st.sidebar.button("New Conversation"):
-        clear_session_state()
+        # Initialize the agent session id if not already set
+        if st.session_state.session_id is None:
+            st.session_state.session_id = session_generator()
 
-    # Initialize the agent session id if not already set
-    if st.session_state.session_id is None:
-        st.session_state.session_id = session_generator()
+        # Sidebar for conversation history and controls
+        st.sidebar.title("Conversation Controls")
+        if st.sidebar.button("Clear History"):
+            st.session_state.conversation = []
+            st.session_state.session_id = session_generator()
+            st.session_state.feedback = {}
+            st.experimental_rerun()
 
-    # Sidebar for conversation history and controls
-    st.sidebar.title("Conversation Controls")
-    if st.sidebar.button("Clear History"):
-        st.session_state.conversation = []
-        st.session_state.session_id = session_generator()
-        st.session_state.feedback = {}
-        st.experimental_rerun()
+        # Render sidebar history
+        render_sidebar_history()
 
-    # Render sidebar history
-    render_sidebar_history()
+        # Main chat interface
+        chat_container = st.container()
+        input_container = st.container()
 
-    # Main chat interface
-    chat_container = st.container()
-    input_container = st.container()
+        def render_input():
+            st.text_area("Ask a question:", key="user_input", height=50, on_change=None)
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
+            with col2:
+                with st.expander("Options", expanded=False):
+                    if st.button("Refresh", key="refresh_button", on_click=lambda: st.experimental_set_query_params(refresh='true'), use_container_width=True):
+                        pass
+                    if st.button("New Conversation", key="new_conversation_button", on_click=clear_session_state, use_container_width=True):
+                        pass
+                    if st.button("Clear History", key="clear_history_button", on_click=lambda: setattr(st.session_state, 'conversation', []), use_container_width=True):
+                        pass
+                    if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
+                        pass
 
-    def render_input():
-        st.text_area("Ask a question:", key="user_input", height=50, on_change=None)
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
-        with col2:
-            with st.expander("Options", expanded=False):
-                if st.button("Refresh", key="refresh_button", on_click=lambda: st.experimental_set_query_params(refresh='true'), use_container_width=True):
-                    pass
-                if st.button("New Conversation", key="new_conversation_button", on_click=clear_session_state, use_container_width=True):
-                    pass
-                if st.button("Clear History", key="clear_history_button", on_click=lambda: setattr(st.session_state, 'conversation', []), use_container_width=True):
-                    pass
-                if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
-                    pass
+        with chat_container:
+            render_chat()
+        with input_container:
+            render_input()
 
-    with chat_container:
-        render_chat()
-    with input_container:
-        render_input()
-
-    # Add a button to verify DynamoDB entries
-    if st.sidebar.button("Verify DynamoDB Entries"):
-        verify_dynamodb_entries()
+        # Add a button to verify DynamoDB entries
+        if st.sidebar.button("Verify DynamoDB Entries"):
+            verify_dynamodb_entries()
+    else:
+        st.warning('Please log in to access the application.')
 
 def clear_input():
     st.session_state.user_input = ""

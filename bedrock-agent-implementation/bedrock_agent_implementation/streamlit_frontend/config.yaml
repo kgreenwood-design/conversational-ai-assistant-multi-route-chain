@@ -3,11 +3,11 @@ credentials:
     ProductSupport:
       email: productsupport@example.com
       name: Product Support
-      password: Alog2024! # To be replaced with a hashed password
+      password: $2b$12$A8aX5Hy0Xz3Iu5xXGXGz8OeL1GK3NVsXWJJjZE7jTxIdQqsfM5m2e  # Hashed password for "Alog2024!"
 cookie:
   expiry_days: 30
-  key: some_signature_key
-  name: some_cookie_name
+  key: random_signature_key_change_this
+  name: analogic_auth_cookie
 preauthorized:
   emails:
   - melsby@example.com

@@ -5,3 +5,4 @@ pyyaml==6.0.1
 uuid==1.30
 python-dotenv==1.0.0
 extra-streamlit-components==0.1.70
+bcrypt==4.0.1
