@@ -73,46 +73,46 @@ class BedrockAgentStack(Stack):
                 assumed_by=iam.ServicePrincipal("bedrock.amazonaws.com"),
                 role_name=f"AmazonBedrockExecutionRoleForAgents_{BEDROCK_AGENT_NAME}"
             )
-        data_bucket.grant_read_write(bedrock_agent_role)
-        bedrock_agent_lambda_policy = iam.Policy(
-            self, "BedrockAgentLambdaPolicy",
-            policy_name="BedrockAgentLambdaPolicy",
-            statements=[
-                iam.PolicyStatement(
-                    actions=["lambda:InvokeFunction"],
-                    resources=["*"]
-                )
-            ]
-        )
-        bedrock_agent_s3_policy = iam.Policy(
-            self, "BedrockAgentS3Policy",
-            policy_name="BedrockAgentS3Policy",
-            statements=[
-                iam.PolicyStatement(
-                    actions=["s3:GetObject"],
-                    resources=["*"]
-                )
-            ]
-        )
-        bedrock_agent_model_policy = iam.Policy(
-            self, "BedrockAgentModelPolicy",
-            policy_name="BedrockAgentModelPolicy",
-            statements=[
-                iam.PolicyStatement(
-                    actions=["bedrock:*"],
-                    resources=["*"]
-                )
-            ]
-        )
-        bedrock_agent_role.attach_inline_policy(
-            bedrock_agent_lambda_policy
-        )
-        bedrock_agent_role.attach_inline_policy(
-            bedrock_agent_s3_policy
-        )
-        bedrock_agent_role.attach_inline_policy(
-            bedrock_agent_model_policy
-        )
+            data_bucket.grant_read_write(bedrock_agent_role)
+            bedrock_agent_lambda_policy = iam.Policy(
+                self, "BedrockAgentLambdaPolicy",
+                policy_name="BedrockAgentLambdaPolicy",
+                statements=[
+                    iam.PolicyStatement(
+                        actions=["lambda:InvokeFunction"],
+                        resources=["*"]
+                    )
+                ]
+            )
+            bedrock_agent_s3_policy = iam.Policy(
+                self, "BedrockAgentS3Policy",
+                policy_name="BedrockAgentS3Policy",
+                statements=[
+                    iam.PolicyStatement(
+                        actions=["s3:GetObject"],
+                        resources=["*"]
+                    )
+                ]
+            )
+            bedrock_agent_model_policy = iam.Policy(
+                self, "BedrockAgentModelPolicy",
+                policy_name="BedrockAgentModelPolicy",
+                statements=[
+                    iam.PolicyStatement(
+                        actions=["bedrock:*"],
+                        resources=["*"]
+                    )
+                ]
+            )
+            bedrock_agent_role.attach_inline_policy(
+                bedrock_agent_lambda_policy
+            )
+            bedrock_agent_role.attach_inline_policy(
+                bedrock_agent_s3_policy
+            )
+            bedrock_agent_role.attach_inline_policy(
+                bedrock_agent_model_policy
+            )
 
         #create a bedrock knowledge base
         bedrock_kb_role = iam.Role(
