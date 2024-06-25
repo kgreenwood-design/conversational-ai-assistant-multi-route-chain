@@ -206,13 +206,12 @@ def provide_feedback(message_index, feedback_type):
 
 def submit_question():
     if st.session_state.user_input:
-        st.session_state.processing = True
-        try:
-            # Add the user's prompt to the conversation state
-            st.session_state.conversation.append({'user': st.session_state.user_input})
+        # Add the user's prompt to the conversation state
+        st.session_state.conversation.append({'user': st.session_state.user_input})
 
-            # Format and add the answer to the conversation state
-            with st.spinner("Processing your request..."):
+        # Format and add the answer to the conversation state
+        with st.spinner("Processing your request..."):
+            try:
                 response = bedrock_client.invoke_agent(
                     agentId=BEDROCK_AGENT_ID,
                     agentAliasId=BEDROCK_AGENT_ALIAS,
@@ -226,17 +225,14 @@ def submit_question():
                     answer += process_stream(stream)
                 st.session_state.conversation.append({'assistant': answer})
 
-            # Save the conversation to DynamoDB
-            save_to_dynamodb(st.session_state.session_id, st.session_state.conversation)
+                # Save the conversation to DynamoDB
+                save_to_dynamodb(st.session_state.session_id, st.session_state.conversation)
 
-            # Clear the input box after submission
-            st.session_state.user_input = ""
-        except Exception as e:
-            st.error("An error occurred. Please try again later.")
-            logging.error(f"Exception when calling Bedrock Agent: {e}")
-        finally:
-            st.session_state.processing = False
-            st.experimental_rerun()
+                # Clear the input box after submission
+                st.session_state.user_input = ""
+            except Exception as e:
+                st.error("An error occurred. Please try again later.")
+                logging.error(f"Exception when calling Bedrock Agent: {e}")
 
 def main():
     st.title("Analogic Product Support AI")
