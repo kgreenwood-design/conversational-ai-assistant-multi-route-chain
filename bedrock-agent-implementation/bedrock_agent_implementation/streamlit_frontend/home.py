@@ -182,15 +182,18 @@ def provide_feedback(message_index, feedback_type):
 def submit_question():
     if st.session_state.user_input and not st.session_state.processing:
         st.session_state.processing = True
+        st.session_state.conversation.append({'user': st.session_state.user_input})
+        user_input = st.session_state.user_input
+        st.session_state.user_input = ""
+        
         try:
-            st.session_state.conversation.append({'user': st.session_state.user_input})
             with st.spinner("Processing your request..."):
                 response = bedrock_client.invoke_agent(
                     agentId=BEDROCK_AGENT_ID,
                     agentAliasId=BEDROCK_AGENT_ALIAS,
                     sessionId=st.session_state.session_id,
                     endSession=False,
-                    inputText=st.session_state.user_input
+                    inputText=user_input
                 )
                 results = response.get("completion")
                 answer = ""
@@ -198,13 +201,11 @@ def submit_question():
                     answer += process_stream(stream)
                 st.session_state.conversation.append({'assistant': answer})
             save_to_dynamodb(st.session_state.session_id, st.session_state.conversation)
-            st.session_state.user_input = ""
         except Exception as e:
             st.error("An error occurred. Please try again later.")
             logger.error(f"Exception when calling Bedrock Agent: {e}")
         finally:
             st.session_state.processing = False
-            st.experimental_rerun()
 
 def main():
     st.title("Analogic Product Support AI")
