@@ -138,31 +138,30 @@ def session_generator():
 def save_to_dynamodb(session_id, conversation, feedback=None, username=None):
     timestamp = datetime.now().isoformat()
     item = {
-        'id': str(uuid.uuid4()),
         'session_id': session_id,
-        'conversation': conversation,
         'timestamp': timestamp,
+        'conversation': conversation,
         'feedback': feedback
     }
     if username:
         item['username'] = username
     try:
         table.put_item(Item=item)
-        logging.info("Conversation saved successfully!")
+        logger.info("Conversation saved successfully!")
     except ClientError as e:
         error_code = e.response['Error']['Code']
         error_message = e.response['Error']['Message']
         if error_code == 'AccessDeniedException':
-            logging.error(f"AccessDeniedException: {error_message}")
+            logger.error(f"AccessDeniedException: {error_message}")
             st.error("Unable to save conversation due to permissions. Please check DynamoDB access.")
         elif error_code == 'ResourceNotFoundException':
-            logging.error(f"ResourceNotFoundException: {error_message}")
+            logger.error(f"ResourceNotFoundException: {error_message}")
             st.error("DynamoDB table not found. Please check if the table exists.")
         else:
-            logging.error(f"Unexpected error when saving to DynamoDB: {error_code} - {error_message}")
+            logger.error(f"Unexpected error when saving to DynamoDB: {error_code} - {error_message}")
             st.error(f"An error occurred while saving the conversation: {error_code}")
     except Exception as e:
-        logging.error(f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}")
         st.error(f"An unexpected error occurred: {str(e)}")
     return True
 
@@ -335,6 +334,7 @@ def verify_dynamodb_entries():
             st.sidebar.warning("No entries found for the current session.")
     except Exception as e:
         st.sidebar.error(f"Error querying DynamoDB: {str(e)}")
+        logger.error(f"Error querying DynamoDB: {str(e)}")
 
 if __name__ == '__main__':
     main()

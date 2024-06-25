@@ -156,7 +156,8 @@ class BaseInfraStack(Stack):
         self.chat_history_table = dynamodb.Table(
             self, "ChatHistoryTable",
             table_name="ChatHistory",
-            partition_key=dynamodb.Attribute(name="id", type=dynamodb.AttributeType.STRING),
+            partition_key=dynamodb.Attribute(name="session_id", type=dynamodb.AttributeType.STRING),
+            sort_key=dynamodb.Attribute(name="timestamp", type=dynamodb.AttributeType.STRING),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             removal_policy=cdk.RemovalPolicy.DESTROY
         )
