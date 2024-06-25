@@ -288,6 +288,9 @@ def main():
     # Ensure the conversation is always displayed
     render_chat()
 
+    # Ensure the conversation is always displayed
+    render_chat()
+
     if reverse_rendering:
         with input_container:
             render_input()
