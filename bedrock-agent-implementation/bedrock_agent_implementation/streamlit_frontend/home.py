@@ -172,6 +172,41 @@ def ensure_dynamodb_table_exists():
 def main():
     st.title("Plant Technician AI")
 
+    def submit_question():
+        if st.session_state.user_input and not st.session_state.processing:
+            st.session_state.processing = True
+            try:
+                # Add the user's prompt to the conversation state
+                st.session_state.conversation.append({'user': st.session_state.user_input})
+
+                # Format and add the answer to the conversation state
+                with st.spinner("Processing your request..."):
+                    response = bedrock_client.invoke_agent(
+                        agentId=BEDROCK_AGENT_ID,
+                        agentAliasId=BEDROCK_AGENT_ALIAS,
+                        sessionId=st.session_state.session_id,
+                        endSession=False,
+                        inputText=st.session_state.user_input
+                    )
+                    results = response.get("completion")
+                    answer = ""
+                    for stream in results:
+                        answer += process_stream(stream)
+                    st.session_state.conversation.append({'assistant': answer})
+
+                # Save the conversation to DynamoDB
+                save_to_dynamodb(st.session_state.username, st.session_state.session_id, st.session_state.conversation)
+
+                # Clear the input box after submission
+                st.session_state.user_input = ""
+                
+            except Exception as e:
+                st.error("An error occurred. Please try again later.")
+                logging.error(f"Exception when calling Bedrock Agent: {e}")
+            finally:
+                st.session_state.processing = False
+                st.experimental_rerun()
+
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
 
@@ -204,18 +239,19 @@ def main():
                     st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
 
         # User input area
-        user_input = st.text_input("Ask a question:", key="user_input")
+        user_input = st.text_input("Ask a question:", key="user_input", on_change=submit_question)
         col1, col2, col3 = st.columns([1, 1, 5])
         with col1:
-            submit_button = st.button("Submit")
+            submit_button = st.button("Submit", on_click=submit_question)
         with col2:
-            clear_button = st.button("Clear Input")
+            clear_button = st.button("Clear Input", on_click=clear_input)
 
-        if clear_button:
-            st.session_state.user_input = ""
-            st.experimental_rerun()
+def clear_input():
+    st.session_state.user_input = ""
+    st.experimental_rerun()
 
-        if submit_button and user_input and not st.session_state.processing:
+def submit_question():
+    if st.session_state.user_input and not st.session_state.processing:
             st.session_state.processing = True
             try:
                 # Add the user's prompt to the conversation state
