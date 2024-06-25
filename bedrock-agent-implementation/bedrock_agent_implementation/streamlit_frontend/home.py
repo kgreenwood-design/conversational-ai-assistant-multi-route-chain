@@ -7,9 +7,18 @@ import yaml
 import streamlit_authenticator as stauth
 import uuid
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
 BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
+
+# Check if environment variables are set
+if not BEDROCK_AGENT_ALIAS or not BEDROCK_AGENT_ID:
+    st.error("BEDROCK_AGENT_ALIAS or BEDROCK_AGENT_ID environment variables are not set.")
+    st.stop()
 
 bedrock_client = boto3.client('bedrock-agent-runtime')
 dynamodb = boto3.resource('dynamodb')
