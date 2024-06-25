@@ -50,7 +50,7 @@ class FrontendStack(Stack):
                                     )
         app_execute_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["bedrock:*", "dynamodb:*"],
+                actions=["bedrock:*", "dynamodb:*", "cognito-idp:*"],
                 resources=["*"]
             )
         )
