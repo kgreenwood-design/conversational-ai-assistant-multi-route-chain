@@ -50,7 +50,7 @@
 
 /* Buttons */
 .stButton > button {
-    background-color: #4A90E2;
+    background-color: #00CED1; /* Aqua blue color */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -65,7 +65,12 @@
 }
 
 .stButton > button:hover {
-    background-color: #3A7BC8;
+    background-color: #008B8B; /* Darker aqua blue for hover effect */
+}
+
+/* Ensure all options are visible in dropdowns */
+.stSelectbox select {
+    max-height: none !important;
 }
 
 /* Feedback buttons */
