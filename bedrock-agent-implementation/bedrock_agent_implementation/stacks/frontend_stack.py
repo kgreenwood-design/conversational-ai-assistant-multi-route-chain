@@ -51,6 +51,21 @@ class FrontendStack(Stack):
                 resources=["*"]
             )
         )
+        
+        # Add DynamoDB permissions
+        app_execute_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "dynamodb:PutItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan"
+                ],
+                resources=[f"arn:aws:dynamodb:{self.region}:{self.account}:table/{dynamodb_table_name}"]
+            )
+        )
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(self, "StreamlitAppService",
                                                                              cluster=ecs_cluster,
                                                                              runtime_platform=ecs.RuntimePlatform(
