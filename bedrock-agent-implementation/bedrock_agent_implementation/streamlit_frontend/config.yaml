@@ -1,9 +1,9 @@
 credentials:
   usernames:
-    jsmith:
+    ProductSupport:
       email: jsmith@example.com
       name: John Smith
-      password: $2b$12$K3GvzYhZlWxXRxKVD8bNe.jTX9mifNxnmyKw.s3H7n8AjF1DYC9Oy # To be replaced with a hashed password
+      password: Alog2024! # To be replaced with a hashed password
     rbriggs:
       email: rbriggs@example.com
       name: Rebecca Briggs
