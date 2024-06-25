@@ -5,6 +5,11 @@ import aws_cdk as cdk
 from bedrock_agent_implementation.stacks import base_infra_stack
 from bedrock_agent_implementation.stacks import bedrock_agent_stack
 from bedrock_agent_implementation.stacks import frontend_stack
+import os
+
+# Load environment variables
+from dotenv import load_dotenv
+load_dotenv()
 
 
 APP_PREFIX = "BedrockAgentImpl"

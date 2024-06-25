@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Load configuration file
-with open('config.yaml') as file:
+config_path = os.getenv('CONFIG_PATH', 'config.yaml')
+with open(config_path) as file:
     config = yaml.load(file, Loader=SafeLoader)
 
 # Create an authentication object
