@@ -10,7 +10,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 import logging
 from botocore.exceptions import ClientError
-from botocore.exceptions import ClientError
 
 # Load environment variables
 load_dotenv()
@@ -45,6 +44,8 @@ if 'conversation' not in st.session_state:
     st.session_state.conversation = []
 if 'session_id' not in st.session_state:
     st.session_state.session_id = None
+if 'show_history' not in st.session_state:
+    st.session_state.show_history = False
 
 def format_retrieved_references(references):
     # Extracting the text and link from the references
@@ -143,6 +144,18 @@ def main():
         if st.session_state.session_id is None:
             st.session_state.session_id = session_generator()
 
+        # Sidebar for conversation history
+        st.sidebar.title("Conversation History")
+        if st.sidebar.button("Toggle History"):
+            st.session_state.show_history = not st.session_state.show_history
+
+        if st.session_state.show_history:
+            for interaction in st.session_state.conversation:
+                if 'user' in interaction:
+                    st.sidebar.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
+                elif 'assistant' in interaction:
+                    st.sidebar.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+
         # Taking user input
         user_prompt = st.text_input("Message:")
 
@@ -174,21 +187,24 @@ def main():
                 st.error("An error occurred. Please try again later.")
                 print(f"ERROR: Exception when calling Bedrock Agent: {e}")
 
-        # Display the conversation
-        for interaction in st.session_state.conversation:
-            if 'user' in interaction:
-                st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+        # Display only the last interaction
+        if st.session_state.conversation:
+            last_interaction = st.session_state.conversation[-1]
+            if 'user' in last_interaction:
+                st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {last_interaction["user"]}</div>', unsafe_allow_html=True)
+            elif 'assistant' in last_interaction:
+                st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {last_interaction["assistant"]}</div>', unsafe_allow_html=True)
 
         # Add feedback buttons
-        if st.button("👍 Helpful"):
-            save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}])
-            st.success("Thank you for your feedback!")
-
-        if st.button("👎 Not Helpful"):
-            save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}])
-            st.success("Thank you for your feedback!")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("👍 Helpful"):
+                save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}])
+                st.success("Thank you for your feedback!")
+        with col2:
+            if st.button("👎 Not Helpful"):
+                save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}])
+                st.success("Thank you for your feedback!")
 
         st.info("Note: If you see a warning about saving the conversation, your feedback is still valuable and has been recorded.")
 
