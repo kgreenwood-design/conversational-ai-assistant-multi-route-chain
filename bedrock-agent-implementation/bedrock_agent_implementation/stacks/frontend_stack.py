@@ -47,25 +47,8 @@ class FrontendStack(Stack):
                                     )
         app_execute_role.add_to_policy(
             iam.PolicyStatement(
-                actions=["bedrock:*"],
+                actions=["bedrock:*", "dynamodb:*"],
                 resources=["*"]
-            )
-        )
-        
-        # Add DynamoDB permissions to the app_execute_role
-        app_execute_role.add_to_policy(
-            iam.PolicyStatement(
-                actions=[
-                    "dynamodb:PutItem",
-                    "dynamodb:GetItem",
-                    "dynamodb:UpdateItem",
-                    "dynamodb:DeleteItem",
-                    "dynamodb:Query",
-                    "dynamodb:Scan",
-                    "dynamodb:BatchWriteItem",
-                    "dynamodb:DescribeTable"
-                ],
-                resources=[f"arn:aws:dynamodb:{self.region}:{self.account}:table/{dynamodb_table_name}"]
             )
         )
         
