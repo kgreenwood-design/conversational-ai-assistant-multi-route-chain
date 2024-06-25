@@ -291,8 +291,20 @@ def main():
 
     if authentication_status:
         logger.debug("User authenticated successfully")
-        authenticator.logout('Logout', 'sidebar')
-        st.sidebar.write(f'Welcome, *{name}*')
+        try:
+            authenticator.logout('Logout', 'sidebar')
+            st.sidebar.write(f'Welcome, *{name}*')
+            logger.debug("Logout button added and welcome message displayed")
+        except Exception as e:
+            logger.error(f"Error setting up authenticated user interface: {str(e)}")
+            st.error("An error occurred while setting up the user interface. Please try again.")
+            return
+    elif authentication_status is False:
+        logger.warning("Authentication failed")
+        st.error('Username/password is incorrect')
+    elif authentication_status is None:
+        logger.info("No authentication attempt made")
+        st.warning('Please enter your username and password')
 
         # Initialize the agent session id if not already set
         if st.session_state.session_id is None:
