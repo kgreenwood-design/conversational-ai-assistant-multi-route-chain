@@ -130,7 +130,7 @@ def session_generator():
     logger.info(f"Session ID: {pattern}")
     return pattern
 
-def save_to_dynamodb(session_id, conversation, feedback=None):
+def save_to_dynamodb(session_id, conversation, feedback=None, username=None):
     timestamp = datetime.now().isoformat()
     item = {
         'id': str(uuid.uuid4()),
@@ -139,6 +139,8 @@ def save_to_dynamodb(session_id, conversation, feedback=None):
         'timestamp': timestamp,
         'feedback': feedback
     }
+    if username:
+        item['username'] = username
     try:
         table.put_item(Item=item)
         logging.info("Conversation saved successfully!")
@@ -174,7 +176,8 @@ def ensure_dynamodb_table_exists():
 
 def provide_feedback(message_index, feedback_type):
     st.session_state.feedback[message_index] = feedback_type
-    save_to_dynamodb(st.session_state.username, st.session_state.session_id, st.session_state.conversation, st.session_state.feedback)
+    username = st.session_state.get('username')
+    save_to_dynamodb(st.session_state.session_id, st.session_state.conversation, st.session_state.feedback, username)
     st.success("Thank you for your feedback!")
     time.sleep(1)
     st.experimental_rerun()
