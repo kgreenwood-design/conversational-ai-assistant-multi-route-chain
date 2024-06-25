@@ -46,6 +46,8 @@ if 'session_id' not in st.session_state:
     st.session_state.session_id = None
 if 'show_history' not in st.session_state:
     st.session_state.show_history = False
+if 'user_input' not in st.session_state:
+    st.session_state.user_input = ""
 
 def format_retrieved_references(references):
     # Extracting the text and link from the references
@@ -182,8 +184,14 @@ def main():
 
         # Sidebar for conversation history
         st.sidebar.title("Conversation History")
-        if st.sidebar.button("Toggle History"):
-            st.session_state.show_history = not st.session_state.show_history
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            if st.button("Toggle History"):
+                st.session_state.show_history = not st.session_state.show_history
+        with col2:
+            if st.button("Clear History"):
+                st.session_state.conversation = []
+                st.session_state.session_id = session_generator()
 
         if st.session_state.show_history:
             for interaction in st.session_state.conversation:
@@ -193,7 +201,7 @@ def main():
                     st.sidebar.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
 
         # Taking user input
-        user_prompt = st.text_input("Message:")
+        user_prompt = st.text_input("Message:", key="user_input", value=st.session_state.user_input)
 
         if user_prompt:
             try:
@@ -217,6 +225,9 @@ def main():
 
                 # Save the conversation to DynamoDB
                 save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation)
+
+                # Clear the input box after submission
+                st.session_state.user_input = ""
 
             except Exception as e:
                 # Display an error message if an exception occurs
