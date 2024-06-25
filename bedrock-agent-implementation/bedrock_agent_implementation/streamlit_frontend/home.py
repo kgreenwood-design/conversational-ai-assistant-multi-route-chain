@@ -233,48 +233,6 @@ def ensure_dynamodb_table_exists():
 def main():
     st.title("Analogic Product Support AI")
 
-    def submit_question():
-        if st.session_state.user_input and not st.session_state.processing:
-            st.session_state.processing = True
-            try:
-                # Add the user's prompt to the conversation state
-                st.session_state.conversation.append({'user': st.session_state.user_input})
-
-                # Format and add the answer to the conversation state
-                with st.spinner("Processing your request..."):
-                    response = bedrock_client.invoke_agent(
-                        agentId=BEDROCK_AGENT_ID,
-                        agentAliasId=BEDROCK_AGENT_ALIAS,
-                        sessionId=st.session_state.session_id,
-                        endSession=False,
-                        inputText=st.session_state.user_input
-                    )
-                    results = response.get("completion")
-                    answer = ""
-                    for stream in results:
-                        answer += process_stream(stream)
-                    st.session_state.conversation.append({'assistant': answer})
-
-                # Save the conversation to DynamoDB
-                save_to_dynamodb(st.session_state.username, st.session_state.session_id, st.session_state.conversation)
-
-                # Clear the input box after submission
-                st.session_state.user_input = ""
-                
-            except Exception as e:
-                st.error("An error occurred. Please try again later.")
-                logging.error(f"Exception when calling Bedrock Agent: {e}")
-            finally:
-                st.session_state.processing = False
-                st.experimental_rerun()
-
-    def provide_feedback(message_index, feedback_type):
-        st.session_state.feedback[message_index] = feedback_type
-        save_to_dynamodb(st.session_state.username, st.session_state.session_id, st.session_state.conversation, st.session_state.feedback)
-        st.success("Thank you for your feedback!")
-        time.sleep(1)
-        st.experimental_rerun()
-
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
 
@@ -295,6 +253,65 @@ def main():
             authenticator.logout('Logout', 'sidebar')
             st.sidebar.write(f'Welcome, *{name}*')
             logger.debug("Logout button added and welcome message displayed")
+            
+            # Initialize the agent session id if not already set
+            if st.session_state.session_id is None:
+                st.session_state.session_id = session_generator()
+
+            # Sidebar for conversation history and controls
+            st.sidebar.title("Conversation Controls")
+            if st.sidebar.button("Toggle History"):
+                st.session_state.show_history = not st.session_state.show_history
+            if st.sidebar.button("Clear History"):
+                st.session_state.conversation = []
+                st.session_state.session_id = session_generator()
+
+            # Option to reverse rendering
+            reverse_rendering = st.sidebar.checkbox("Reverse Rendering")
+
+            # Main chat interface
+            chat_container = st.container()
+            input_container = st.container()
+
+            def render_chat():
+                for idx, interaction in enumerate(st.session_state.conversation):
+                    if 'user' in interaction:
+                        st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
+                    elif 'assistant' in interaction:
+                        st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+                        col1, col2, col3 = st.columns([1, 1, 5])
+                        with col1:
+                            if st.button("👍", key=f"thumbs_up_{idx}"):
+                                provide_feedback(idx, "positive")
+                        with col2:
+                            if st.button("👎", key=f"thumbs_down_{idx}"):
+                                provide_feedback(idx, "negative")
+
+            def render_input():
+                user_input = st.text_area("Ask a question:", key="user_input", height=100)
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
+                with col2:
+                    with st.expander("Options", expanded=False):
+                        if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
+                            pass
+                        if st.button("Clear History", key="clear_history_button", use_container_width=True):
+                            st.session_state.conversation = []
+                            st.session_state.session_id = session_generator()
+                            st.session_state.feedback = {}
+                            st.experimental_rerun()
+
+            if reverse_rendering:
+                with input_container:
+                    render_input()
+                with chat_container:
+                    render_chat()
+            else:
+                with chat_container:
+                    render_chat()
+                with input_container:
+                    render_input()
         except Exception as e:
             logger.error(f"Error setting up authenticated user interface: {str(e)}")
             st.error("An error occurred while setting up the user interface. Please try again.")
@@ -304,72 +321,6 @@ def main():
         st.error('Username/password is incorrect')
     elif authentication_status is None:
         logger.info("No authentication attempt made")
-        st.warning('Please enter your username and password')
-
-        # Initialize the agent session id if not already set
-        if st.session_state.session_id is None:
-            st.session_state.session_id = session_generator()
-
-        # Sidebar for conversation history and controls
-        st.sidebar.title("Conversation Controls")
-        if st.sidebar.button("Toggle History"):
-            st.session_state.show_history = not st.session_state.show_history
-        if st.sidebar.button("Clear History"):
-            st.session_state.conversation = []
-            st.session_state.session_id = session_generator()
-
-        # Option to reverse rendering
-        reverse_rendering = st.sidebar.checkbox("Reverse Rendering")
-
-        # Main chat interface
-        chat_container = st.container()
-        input_container = st.container()
-
-        def render_chat():
-            for idx, interaction in enumerate(st.session_state.conversation):
-                if 'user' in interaction:
-                    st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
-                elif 'assistant' in interaction:
-                    st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
-                    col1, col2, col3 = st.columns([1, 1, 5])
-                    with col1:
-                        if st.button("👍", key=f"thumbs_up_{idx}"):
-                            provide_feedback(idx, "positive")
-                    with col2:
-                        if st.button("👎", key=f"thumbs_down_{idx}"):
-                            provide_feedback(idx, "negative")
-
-        def render_input():
-            user_input = st.text_area("Ask a question:", key="user_input", height=100)
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
-            with col2:
-                with st.expander("Options", expanded=False):
-                    if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
-                        pass
-                    if st.button("Clear History", key="clear_history_button", use_container_width=True):
-                        st.session_state.conversation = []
-                        st.session_state.session_id = session_generator()
-                        st.session_state.feedback = {}
-                        st.experimental_rerun()
-
-        if reverse_rendering:
-            with input_container:
-                render_input()
-            with chat_container:
-                render_chat()
-        else:
-            with chat_container:
-                render_chat()
-            with input_container:
-                render_input()
-
-    elif authentication_status == False:
-        logger.debug("Authentication failed: incorrect username/password")
-        st.error('Username/password is incorrect')
-    elif authentication_status == None:
-        logger.debug("No authentication attempt made yet")
         if os.path.exists("logo.png"):
             st.image("logo.png", width=100)  # Further reduced width from 150 to 100
         else:
