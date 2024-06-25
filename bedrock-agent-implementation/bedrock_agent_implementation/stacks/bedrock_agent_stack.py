@@ -4,6 +4,7 @@ import json
 from constructs import Construct
 import aws_cdk as cdk
 import logging
+from bedrock_agent_implementation.utils.bedrock_utils import check_bedrock_availability
 from aws_cdk import (
     Stack,
     Duration,
@@ -53,7 +54,7 @@ class BedrockAgentStack(Stack):
 
         try:
             logger.info("Initializing BedrockAgentStack")
-            self.check_bedrock_availability()
+            check_bedrock_availability()
             custom_res_role = self.create_custom_resource_role()
             bedrock_agent_role = self.create_bedrock_agent_role(data_bucket)
             bedrock_kb_role = self.create_bedrock_kb_role()
@@ -65,14 +66,6 @@ class BedrockAgentStack(Stack):
             logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
             raise
 
-    def check_bedrock_availability(self):
-        try:
-            bedrock_client = boto3.client('bedrock')
-            bedrock_client.list_foundation_models()
-            logger.info("Bedrock service is available")
-        except Exception as e:
-            logger.error(f"Bedrock service is not available: {str(e)}")
-            raise
 
     def create_custom_resource_role(self):
         custom_res_role = iam.Role(
