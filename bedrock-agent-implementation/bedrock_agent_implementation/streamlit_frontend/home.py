@@ -116,13 +116,17 @@ def save_to_dynamodb(username, session_id, conversation):
     }
     try:
         table.put_item(Item=item)
+        st.success("Conversation saved successfully!")
     except ClientError as e:
         if e.response['Error']['Code'] == 'AccessDeniedException':
             logging.error(f"AccessDeniedException: {e}")
-            st.warning("Unable to save conversation due to permissions. Please contact the administrator.")
+            st.warning("Unable to save conversation due to permissions. Your feedback is still valuable!")
         else:
             logging.error(f"Unexpected error when saving to DynamoDB: {e}")
-            st.error("An unexpected error occurred. Please try again later.")
+            st.warning("Unable to save conversation. Your feedback is still valuable!")
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        st.warning("An unexpected error occurred. Your feedback is still valuable!")
 
 def main():
     st.title("Conversational AI - Plant Technician")
