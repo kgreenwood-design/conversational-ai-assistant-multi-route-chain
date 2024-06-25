@@ -17,7 +17,7 @@ import extra_streamlit_components as stx
 # Load environment variables
 load_dotenv()
 
-st.set_page_config(page_title="Analogic Support AI", layout="wide")
+st.set_page_config(page_title="Analogic Product Support AI", layout="wide")
 
 # Load and set background image
 def add_bg_from_local(image_file):
@@ -219,7 +219,7 @@ def ensure_dynamodb_table_exists():
         print(f"Error ensuring DynamoDB table exists: {e}")
 
 def main():
-    st.title("Plant Technician AI")
+    st.title("Analogic Product Support AI")
 
     def submit_question():
         if st.session_state.user_input and not st.session_state.processing:
