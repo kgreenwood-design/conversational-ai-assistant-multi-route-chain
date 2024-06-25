@@ -336,9 +336,9 @@ def main():
         st.error('Username/password is incorrect')
     elif authentication_status == None:
         if os.path.exists("logo.png"):
-            st.image("logo.png", width=150)  # Reduced width from 200 to 150
+            st.image("logo.png", width=100)  # Further reduced width from 150 to 100
         else:
-            st.warning("Logo image not found. Please ensure 'logo.png' is in the correct directory.")
+            st.info("Welcome to Analogic Product Support AI")
         st.warning('Please enter your username and password')
 
 def clear_input():
