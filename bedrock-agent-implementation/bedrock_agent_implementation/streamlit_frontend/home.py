@@ -93,9 +93,13 @@ def clear_session_state():
     st.session_state.feedback = {}
 
 # Initialize session state
-if 'initialized' not in st.session_state:
+if 'initialized' not in st.session_state or st.experimental_get_query_params().get('refresh'):
     clear_session_state()
     st.session_state.initialized = True
+    # Remove the 'refresh' query parameter
+    params = st.experimental_get_query_params()
+    params.pop('refresh', None)
+    st.experimental_set_query_params(**params)
 
 def format_retrieved_references(references):
     formatted_output = ""
@@ -237,6 +241,11 @@ def main():
 
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
+
+    # Add refresh button
+    if st.sidebar.button("Refresh Page"):
+        st.experimental_set_query_params(refresh='true')
+        st.experimental_rerun()
 
     # Clear session state when the app starts
     if st.sidebar.button("New Conversation"):
