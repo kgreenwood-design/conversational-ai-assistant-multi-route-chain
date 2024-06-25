@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import logging
 from botocore.exceptions import ClientError
 import base64
+import time
 
 # Load environment variables
 load_dotenv()
@@ -88,6 +89,8 @@ if 'user_input' not in st.session_state:
     st.session_state.user_input = ""
 if 'processing' not in st.session_state:
     st.session_state.processing = False
+if 'feedback' not in st.session_state:
+    st.session_state.feedback = {}
 
 def format_retrieved_references(references):
     # Extracting the text and link from the references
@@ -149,14 +152,15 @@ def session_generator():
 
     return pattern
 
-def save_to_dynamodb(username, session_id, conversation):
+def save_to_dynamodb(username, session_id, conversation, feedback=None):
     timestamp = datetime.now().isoformat()
     item = {
         'id': str(uuid.uuid4()),
         'username': username,
         'session_id': session_id,
         'conversation': conversation,
-        'timestamp': timestamp
+        'timestamp': timestamp,
+        'feedback': feedback
     }
     try:
         table.put_item(Item=item)
@@ -243,6 +247,13 @@ def main():
                 st.session_state.processing = False
                 st.experimental_rerun()
 
+    def provide_feedback(message_index, feedback_type):
+        st.session_state.feedback[message_index] = feedback_type
+        save_to_dynamodb(st.session_state.username, st.session_state.session_id, st.session_state.conversation, st.session_state.feedback)
+        st.success("Thank you for your feedback!")
+        time.sleep(1)
+        st.experimental_rerun()
+
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
 
@@ -273,19 +284,32 @@ def main():
         input_container = st.container()
 
         def render_chat():
-            for interaction in st.session_state.conversation:
+            for idx, interaction in enumerate(st.session_state.conversation):
                 if 'user' in interaction:
                     st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
                 elif 'assistant' in interaction:
                     st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+                    col1, col2, col3 = st.columns([1, 1, 5])
+                    with col1:
+                        if st.button("👍", key=f"thumbs_up_{idx}"):
+                            provide_feedback(idx, "positive")
+                    with col2:
+                        if st.button("👎", key=f"thumbs_down_{idx}"):
+                            provide_feedback(idx, "negative")
 
         def render_input():
-            user_input = st.text_input("Ask a question:", key="user_input", on_change=submit_question)
-            col1, col2, col3 = st.columns([1, 1, 5])
+            user_input = st.text_area("Ask a question:", key="user_input", height=100)
+            col1, col2, col3, col4 = st.columns([1, 1, 1, 4])
             with col1:
                 submit_button = st.button("Submit", on_click=submit_question)
             with col2:
                 clear_button = st.button("Clear Input", on_click=clear_input)
+            with col3:
+                if st.button("Clear History"):
+                    st.session_state.conversation = []
+                    st.session_state.session_id = session_generator()
+                    st.session_state.feedback = {}
+                    st.experimental_rerun()
 
         if reverse_rendering:
             with input_container:

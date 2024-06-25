@@ -9,23 +9,28 @@
 }
 
 /* Chat messages */
-.user-message {
-    background-color: #e6f3ff;
+.user-message, .assistant-message {
     padding: 10px;
     border-radius: 10px;
     margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-message {
+    background-color: #e6f3ff;
+    border-left: 4px solid #4A90E2;
 }
 
 .assistant-message {
     background-color: #f0f2f6;
-    padding: 10px;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    border-left: 4px solid #50E3C2;
 }
 
 /* Input area */
-.stTextInput > div > div > input {
+.stTextArea > div > div > textarea {
     background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 }
 
 /* Buttons */
@@ -48,6 +53,14 @@
     background-color: #45a049;
 }
 
+/* Feedback buttons */
+.stButton > button[data-baseweb="button"] {
+    min-width: 40px;
+    height: 40px;
+    padding: 5px;
+    font-size: 20px;
+}
+
 /* Login form */
 .stForm {
     background-color: rgba(255, 255, 255, 0.9);
@@ -61,4 +74,16 @@
     display: block;
     margin: 0 auto 20px auto;
     max-width: 200px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main {
+        padding: 1rem;
+    }
+    
+    .stButton > button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
 }
