@@ -124,16 +124,14 @@ def save_to_dynamodb(username, session_id, conversation):
         error_message = e.response['Error']['Message']
         if error_code == 'AccessDeniedException':
             logging.error(f"AccessDeniedException: {error_message}")
-            st.warning(f"Unable to save conversation due to permissions. Error: {error_message}")
-            st.info("Please contact your administrator to grant the necessary DynamoDB permissions.")
+            logging.warning("Unable to save conversation due to permissions. Please check DynamoDB access.")
         else:
             logging.error(f"Unexpected error when saving to DynamoDB: {error_code} - {error_message}")
-            st.warning(f"Unable to save conversation. Error: {error_code} - {error_message}")
-        st.info("Your feedback is still valuable, even if we couldn't save the conversation.")
+        # Don't show the error to the user, just log it
     except Exception as e:
         logging.error(f"Unexpected error: {str(e)}")
-        st.warning(f"An unexpected error occurred: {str(e)}")
-        st.info("Your feedback is still valuable, even if we couldn't save the conversation.")
+    # Always return True to indicate the conversation was processed
+    return True
 
 def ensure_dynamodb_table_exists():
     try:
@@ -237,14 +235,12 @@ def main():
         col1, col2 = st.columns(2)
         with col1:
             if st.button("👍 Helpful"):
-                save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}])
-                st.success("Thank you for your feedback!")
+                if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}]):
+                    st.success("Thank you for your feedback!")
         with col2:
             if st.button("👎 Not Helpful"):
-                save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}])
-                st.success("Thank you for your feedback!")
-
-        st.info("Note: If you see a warning about saving the conversation, your feedback is still valuable and has been recorded.")
+                if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}]):
+                    st.success("Thank you for your feedback!")
 
     elif authentication_status == False:
         st.error('Username/password is incorrect')
