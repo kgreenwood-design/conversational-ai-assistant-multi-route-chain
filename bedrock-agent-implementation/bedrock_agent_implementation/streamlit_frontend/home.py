@@ -117,6 +117,12 @@ if 'processing' not in st.session_state:
     st.session_state.processing = False
 if 'feedback' not in st.session_state:
     st.session_state.feedback = {}
+if 'authentication_status' not in st.session_state:
+    st.session_state.authentication_status = None
+if 'name' not in st.session_state:
+    st.session_state.name = None
+if 'username' not in st.session_state:
+    st.session_state.username = None
 
 def format_retrieved_references(references):
     # Extracting the text and link from the references
@@ -281,19 +287,20 @@ def main():
     # Authentication
     logger.debug("Starting authentication process")
     try:
-        name, authentication_status, username = authenticator.login('Login', 'main')
-        logger.debug(f"Authentication result: status={authentication_status}, name={name}, username={username}")
-        log_auth_attempt(username, "Success" if authentication_status else "Failure")
+        if st.session_state.authentication_status is None:
+            st.session_state.name, st.session_state.authentication_status, st.session_state.username = authenticator.login('Login', 'main')
+            logger.debug(f"Authentication result: status={st.session_state.authentication_status}, name={st.session_state.name}, username={st.session_state.username}")
+            log_auth_attempt(st.session_state.username, "Success" if st.session_state.authentication_status else "Failure")
     except Exception as e:
         logger.error(f"Error during authentication: {str(e)}")
         st.error("An error occurred during authentication. Please try again.")
         return
 
-    if authentication_status:
+    if st.session_state.authentication_status:
         logger.debug("User authenticated successfully")
         try:
             authenticator.logout('Logout', 'sidebar')
-            st.sidebar.write(f'Welcome, *{name}*')
+            st.sidebar.write(f'Welcome, *{st.session_state.name}*')
             logger.debug("Logout button added and welcome message displayed")
             
             # Initialize the agent session id if not already set
