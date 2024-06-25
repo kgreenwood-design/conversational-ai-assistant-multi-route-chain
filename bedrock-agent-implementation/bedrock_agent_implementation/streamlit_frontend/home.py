@@ -28,18 +28,18 @@ def add_bg_from_local(image_file):
     with open(image_file, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
-        background-size: 80% auto;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
+        f"""
+        <style>
+        .stApp {{
+            background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
+            background-size: 80% auto;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
     )
 
 if os.path.exists('image.png'):
@@ -59,8 +59,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Load custom CSS
-with open('style.css') as f:
-    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+if os.path.exists('style.css'):
+    with open('style.css') as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
 BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
@@ -75,8 +76,12 @@ dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('ChatHistory')
 
 # Load configuration file
-with open('config.yaml') as file:
-    config = yaml.safe_load(file)
+if os.path.exists('config.yaml'):
+    with open('config.yaml') as file:
+        config = yaml.safe_load(file)
+else:
+    st.error("Configuration file not found. Please ensure 'config.yaml' is in the correct directory.")
+    st.stop()
 
 # Create an authentication object
 logger.debug("Creating authentication object")
@@ -126,14 +131,11 @@ def format_retrieved_references(references):
 
         return formatted_output
 
-
 def process_stream(stream):
     try:
-        # print("Processing stream...")
         trace = stream.get("trace", {}).get("trace", {}).get("orchestrationTrace", {})
 
         if trace:
-            # print("This is a trace")
             knowledgeBaseInput = trace.get("invocationInput", {}).get(
                 "knowledgeBaseLookupInput", {}
             )
@@ -194,10 +196,8 @@ def save_to_dynamodb(username, session_id, conversation, feedback=None):
             logging.warning("Unable to save conversation due to permissions. Please check DynamoDB access.")
         else:
             logging.error(f"Unexpected error when saving to DynamoDB: {error_code} - {error_message}")
-        # Don't show the error to the user, just log it
     except Exception as e:
         logging.error(f"Unexpected error: {str(e)}")
-    # Always return True to indicate the conversation was processed
     return True
 
 def ensure_dynamodb_table_exists():
