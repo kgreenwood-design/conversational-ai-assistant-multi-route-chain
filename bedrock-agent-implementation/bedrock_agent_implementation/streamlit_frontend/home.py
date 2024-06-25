@@ -21,32 +21,24 @@ load_dotenv()
 
 st.set_page_config(page_title="Analogic Product Support- Development", layout="wide")
 
-# Load and set background image
-def add_bg_from_local(image_file):
+# Load and display logo
+def add_logo(image_file):
     try:
-        with open(image_file, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read())
         st.markdown(
             f"""
-            <style>
-            .stApp {{
-                background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
-                background-size: 80% auto;
-                background-position: center;
-                background-repeat: no-repeat;
-                background-attachment: fixed;
-            }}
-            </style>
+            <div class="logo-container">
+                <img src="data:image/png;base64,{base64.b64encode(open(image_file, "rb").read()).decode()}" class="logo">
+            </div>
             """,
             unsafe_allow_html=True
         )
     except Exception as e:
-        logger.error(f"Error loading background image: {str(e)}")
+        logger.error(f"Error loading logo image: {str(e)}")
 
 if os.path.exists('image.png'):
-    add_bg_from_local('image.png')
+    add_logo('image.png')
 else:
-    st.warning("Background image not found. Please ensure 'image.png' is in the correct directory.")
+    st.warning("Logo image not found. Please ensure 'image.png' is in the correct directory.")
 
 # Add custom CSS
 st.markdown("""

@@ -1,5 +1,20 @@
 /* Custom styles for the Plant Technician AI app */
 
+/* Logo container */
+.logo-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+/* Logo image */
+.logo {
+    max-width: 100%;
+    height: auto;
+    max-height: 150px;
+    object-fit: contain;
+}
+
 /* Main container */
 .main {
     padding: 2rem;
