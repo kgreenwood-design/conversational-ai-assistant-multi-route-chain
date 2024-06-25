@@ -228,19 +228,22 @@ def main():
 
                 # Clear the input box after submission
                 st.session_state.user_input = ""
+                
+                # Rerun the app to update the display
+                st.experimental_rerun()
 
             except Exception as e:
                 # Display an error message if an exception occurs
                 st.error("An error occurred. Please try again later.")
                 print(f"ERROR: Exception when calling Bedrock Agent: {e}")
 
-        # Display only the last interaction
-        if st.session_state.conversation:
-            last_interaction = st.session_state.conversation[-1]
-            if 'user' in last_interaction:
-                st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {last_interaction["user"]}</div>', unsafe_allow_html=True)
-            elif 'assistant' in last_interaction:
-                st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {last_interaction["assistant"]}</div>', unsafe_allow_html=True)
+        # Display the last user input and assistant response
+        if len(st.session_state.conversation) >= 2:
+            last_user = next(item for item in reversed(st.session_state.conversation) if 'user' in item)
+            last_assistant = next(item for item in reversed(st.session_state.conversation) if 'assistant' in item)
+            
+            st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {last_user["user"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {last_assistant["assistant"]}</div>', unsafe_allow_html=True)
 
         # Add feedback buttons
         col1, col2 = st.columns(2)
