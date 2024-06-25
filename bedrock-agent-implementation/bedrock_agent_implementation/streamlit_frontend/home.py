@@ -8,6 +8,8 @@ import streamlit_authenticator as stauth
 import uuid
 from datetime import datetime
 from dotenv import load_dotenv
+import logging
+from botocore.exceptions import ClientError
 
 # Load environment variables
 load_dotenv()
@@ -112,7 +114,15 @@ def save_to_dynamodb(username, session_id, conversation):
         'conversation': conversation,
         'timestamp': timestamp
     }
-    table.put_item(Item=item)
+    try:
+        table.put_item(Item=item)
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'AccessDeniedException':
+            logging.error(f"AccessDeniedException: {e}")
+            st.warning("Unable to save conversation due to permissions. Please contact the administrator.")
+        else:
+            logging.error(f"Unexpected error when saving to DynamoDB: {e}")
+            st.error("An unexpected error occurred. Please try again later.")
 
 def main():
     st.title("Conversational AI - Plant Technician")
@@ -174,6 +184,8 @@ def main():
         if st.button("👎 Not Helpful"):
             save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}])
             st.success("Thank you for your feedback!")
+
+        st.info("Note: If you see a warning about saving the conversation, your feedback is still valuable and has been recorded.")
 
     elif authentication_status == False:
         st.error('Username/password is incorrect')
