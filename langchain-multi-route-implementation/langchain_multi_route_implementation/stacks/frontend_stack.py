@@ -20,7 +20,7 @@ class FrontendStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str,
                  app_execute_role: iam.Role, vpc: ec2.Vpc,
-                 env_vars) -> None:
+                 env_vars, dynamodb_table_name: str) -> None:
         super().__init__(scope, construct_id)
 
         platform_mapping = {
