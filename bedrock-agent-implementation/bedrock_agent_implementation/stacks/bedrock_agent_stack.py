@@ -743,3 +743,11 @@ class BedrockAgentStack(Stack):
     except Exception as e:
         logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
         raise
+    def check_bedrock_availability(self):
+        try:
+            bedrock_client = boto3.client('bedrock')
+            bedrock_client.list_foundation_models()
+            logger.info("Bedrock service is available")
+        except Exception as e:
+            logger.error(f"Bedrock service is not available: {str(e)}")
+            raise
