@@ -114,12 +114,22 @@ class BedrockAgentStack(Stack):
                 bedrock_agent_model_policy
             )
 
-        #create a bedrock knowledge base
-        bedrock_kb_role = iam.Role(
-            self, "BedrockKbRole",
-            assumed_by=iam.ServicePrincipal("bedrock.amazonaws.com"),
-            role_name=f"AmazonBedrockExecutionRoleForKnowledgeBase_{BEDROCK_AGENT_NAME}",
-        )
+            #create a bedrock knowledge base
+            bedrock_kb_role = iam.Role(
+                self, "BedrockKbRole",
+                assumed_by=iam.ServicePrincipal("bedrock.amazonaws.com"),
+                role_name=f"AmazonBedrockExecutionRoleForKnowledgeBase_{BEDROCK_AGENT_NAME}",
+            )
+            
+            # ... [rest of the code]
+
+            self.bedrock_agent_id = agent_id
+            self.bedrock_agent_alias = agent_alias_id
+
+            logger.info("BedrockAgentStack initialization completed successfully")
+        except Exception as e:
+            logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
+            raise
         bedrock_kb_role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "AdministratorAccess"
