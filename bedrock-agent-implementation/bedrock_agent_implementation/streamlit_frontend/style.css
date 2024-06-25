@@ -1,0 +1,64 @@
+/* Custom styles for the Plant Technician AI app */
+
+/* Main container */
+.main {
+    padding: 2rem;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Chat messages */
+.user-message {
+    background-color: #e6f3ff;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.assistant-message {
+    background-color: #f0f2f6;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+/* Input area */
+.stTextInput > div > div > input {
+    background-color: white;
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.stButton > button:hover {
+    background-color: #45a049;
+}
+
+/* Login form */
+.stForm {
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo */
+.logo {
+    display: block;
+    margin: 0 auto 20px auto;
+    max-width: 200px;
+}

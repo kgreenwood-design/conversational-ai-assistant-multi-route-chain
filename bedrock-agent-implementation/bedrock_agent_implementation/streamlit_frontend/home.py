@@ -10,11 +10,47 @@ from datetime import datetime
 from dotenv import load_dotenv
 import logging
 from botocore.exceptions import ClientError
+import base64
 
 # Load environment variables
 load_dotenv()
 
 st.set_page_config(page_title="Plant Technician AI", layout="wide")
+
+# Load and set background image
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read())
+    st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+    )
+
+add_bg_from_local('image.png')
+
+# Add custom CSS
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Roboto', sans-serif;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Load custom CSS
+with open('style.css') as f:
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
 BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
@@ -229,25 +265,43 @@ def main():
             st.session_state.conversation = []
             st.session_state.session_id = session_generator()
 
+        # Option to reverse rendering
+        reverse_rendering = st.sidebar.checkbox("Reverse Rendering")
+
         # Main chat interface
         chat_container = st.container()
-        with chat_container:
+        input_container = st.container()
+
+        def render_chat():
             for interaction in st.session_state.conversation:
                 if 'user' in interaction:
-                    st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
                 elif 'assistant' in interaction:
-                    st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
 
-        # User input area
-        user_input = st.text_input("Ask a question:", key="user_input", on_change=submit_question)
-        col1, col2, col3 = st.columns([1, 1, 5])
-        with col1:
-            submit_button = st.button("Submit", on_click=submit_question)
-        with col2:
-            clear_button = st.button("Clear Input", on_click=clear_input)
+        def render_input():
+            user_input = st.text_input("Ask a question:", key="user_input", on_change=submit_question)
+            col1, col2, col3 = st.columns([1, 1, 5])
+            with col1:
+                submit_button = st.button("Submit", on_click=submit_question)
+            with col2:
+                clear_button = st.button("Clear Input", on_click=clear_input)
+
+        if reverse_rendering:
+            with input_container:
+                render_input()
+            with chat_container:
+                render_chat()
+        else:
+            with chat_container:
+                render_chat()
+            with input_container:
+                render_input()
+
     elif authentication_status == False:
         st.error('Username/password is incorrect')
     elif authentication_status == None:
+        st.image("logo.png", width=200)  # Add your logo image file
         st.warning('Please enter your username and password')
 
 def clear_input():
