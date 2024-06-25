@@ -191,6 +191,8 @@ def main():
 
         st.info("Note: If you see a warning about saving the conversation, your feedback is still valuable and has been recorded.")
 
+        st.info("Note: If you see a warning about saving the conversation, your feedback is still valuable and has been recorded.")
+
     elif authentication_status == False:
         st.error('Username/password is incorrect')
     elif authentication_status == None:
