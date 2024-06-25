@@ -23,6 +23,36 @@ class FrontendStack(Stack):
                  env_vars, dynamodb_table_name: str) -> None:
         super().__init__(scope, construct_id)
 
+        # Add DynamoDB permissions to the app_execute_role
+        app_execute_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "dynamodb:PutItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:Query",
+                    "dynamodb:Scan",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:DescribeTable"
+                ],
+                resources=[f"arn:aws:dynamodb:{self.region}:{self.account}:table/{dynamodb_table_name}"]
+            )
+        )
+
+        # Add CloudWatch Logs permissions
+        app_execute_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogStreams"
+                ],
+                resources=["arn:aws:logs:*:*:*"]
+            )
+        )
+
         platform_mapping = {
             "x86_64": ecs.CpuArchitecture.X86_64,
             "arm64": ecs.CpuArchitecture.ARM64
