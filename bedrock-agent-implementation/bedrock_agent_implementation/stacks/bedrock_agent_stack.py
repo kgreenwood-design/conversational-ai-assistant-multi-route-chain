@@ -59,10 +59,10 @@ class BedrockAgentStack(Stack):
             agent_id, agent_alias_id = self.create_bedrock_agent(custom_res_role, bedrock_agent_role, bedrock_kb_role)
             self.bedrock_agent_id = agent_id
             self.bedrock_agent_alias = agent_alias_id
-                logger.info("BedrockAgentStack initialization completed successfully")
-            except Exception as e:
-                logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
-                raise
+            logger.info("BedrockAgentStack initialization completed successfully")
+        except Exception as e:
+            logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
+            raise
 
     def check_bedrock_availability(self):
         try:
