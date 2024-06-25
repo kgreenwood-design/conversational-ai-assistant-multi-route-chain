@@ -256,20 +256,3 @@ def clear_input():
 
 if __name__ == '__main__':
     main()
-                    {'AttributeName': 'id', 'KeyType': 'HASH'}
-                ],
-                AttributeDefinitions=[
-                    {'AttributeName': 'id', 'AttributeType': 'S'}
-                ],
-                ProvisionedThroughput={
-                    'ReadCapacityUnits': 5,
-                    'WriteCapacityUnits': 5
-                }
-            )
-            # Wait for the table to be created
-            table.meta.client.get_waiter('table_exists').wait(TableName=table_name)
-            print(f"Table {table_name} created successfully.")
-        else:
-            print(f"Table {table_name} already exists.")
-    except ClientError as e:
-        print(f"Error ensuring DynamoDB table exists: {e}")
