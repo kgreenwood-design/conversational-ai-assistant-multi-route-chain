@@ -280,8 +280,14 @@ def main():
 
     # Authentication
     logger.debug("Starting authentication process")
-    name, authentication_status, username = authenticator.login('Login', 'main')
-    logger.debug(f"Authentication result: status={authentication_status}, name={name}, username={username}")
+    try:
+        name, authentication_status, username = authenticator.login('Login', 'main')
+        logger.debug(f"Authentication result: status={authentication_status}, name={name}, username={username}")
+        log_auth_attempt(username, "Success" if authentication_status else "Failure")
+    except Exception as e:
+        logger.error(f"Error during authentication: {str(e)}")
+        st.error("An error occurred during authentication. Please try again.")
+        return
 
     if authentication_status:
         logger.debug("User authenticated successfully")
