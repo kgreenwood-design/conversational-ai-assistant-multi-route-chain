@@ -365,10 +365,10 @@ def main():
             logger.error(f"Error setting up authenticated user interface: {str(e)}")
             st.error("An error occurred while setting up the user interface. Please try again.")
             return
-    elif authentication_status is False:
+    elif st.session_state.authentication_status is False:
         logger.warning("Authentication failed")
         st.error('Username/password is incorrect')
-    elif authentication_status is None:
+    elif st.session_state.authentication_status is None:
         logger.info("No authentication attempt made")
         if os.path.exists("logo.png"):
             st.image("logo.png", width=100)  # Further reduced width from 150 to 100
