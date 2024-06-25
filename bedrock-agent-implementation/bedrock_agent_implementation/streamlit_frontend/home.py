@@ -21,6 +21,9 @@ load_dotenv()
 
 st.set_page_config(page_title="Analogic Product Support- Development", layout="wide")
 
+# Center the title
+st.markdown("<h1 style='text-align: center;'>Analogic Product Support- Development</h1>", unsafe_allow_html=True)
+
 # Load and display logo
 def add_logo(image_file):
     try:
@@ -256,7 +259,7 @@ def render_sidebar_history():
             st.sidebar.text(f"Assistant: {interaction['assistant'][:30]}...")
 
 def main():
-    st.title("Analogic Product Support AI")
+    # Title is now set in st.set_page_config, so we can remove this line
 
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
