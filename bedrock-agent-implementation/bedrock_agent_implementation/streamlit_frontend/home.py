@@ -154,11 +154,16 @@ def save_to_dynamodb(session_id, conversation, feedback=None, username=None):
         error_message = e.response['Error']['Message']
         if error_code == 'AccessDeniedException':
             logging.error(f"AccessDeniedException: {error_message}")
-            logging.warning("Unable to save conversation due to permissions. Please check DynamoDB access.")
+            st.error("Unable to save conversation due to permissions. Please check DynamoDB access.")
+        elif error_code == 'ResourceNotFoundException':
+            logging.error(f"ResourceNotFoundException: {error_message}")
+            st.error("DynamoDB table not found. Please check if the table exists.")
         else:
             logging.error(f"Unexpected error when saving to DynamoDB: {error_code} - {error_message}")
+            st.error(f"An error occurred while saving the conversation: {error_code}")
     except Exception as e:
         logging.error(f"Unexpected error: {str(e)}")
+        st.error(f"An unexpected error occurred: {str(e)}")
     return True
 
 def ensure_dynamodb_table_exists():
