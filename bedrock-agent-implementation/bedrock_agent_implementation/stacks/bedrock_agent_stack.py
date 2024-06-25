@@ -752,10 +752,10 @@ class BedrockAgentStack(Stack):
         agent_alias_id = agent_alias_res.get_response_field("agentAlias.agentAliasId")
         agent_alias_res.node.add_dependency(prepare_agent_res)
 
-        self.bedrock_agent_id = agent_id
-        self.bedrock_agent_alias = agent_alias_id
+            self.bedrock_agent_id = agent_id
+            self.bedrock_agent_alias = agent_alias_id
 
-        logger.info("BedrockAgentStack initialization completed successfully")
-    except Exception as e:
-        logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
-        raise
+            logger.info("BedrockAgentStack initialization completed successfully")
+        except Exception as e:
+            logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
+            raise
