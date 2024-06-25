@@ -50,7 +50,7 @@
 
 /* Buttons */
 .stButton > button {
-    background-color: #00CED1; /* Aqua blue color */
+    background-color: #00008B; /* Dark blue color */
     color: white;
     border: none;
     padding: 10px 20px;
@@ -65,7 +65,7 @@
 }
 
 .stButton > button:hover {
-    background-color: #008B8B; /* Darker aqua blue for hover effect */
+    background-color: #000066; /* Slightly darker blue for hover effect */
 }
 
 /* Ensure all options are visible in dropdowns */
