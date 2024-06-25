@@ -17,11 +17,14 @@ RUN useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
 
 WORKDIR /app
 
-# # Install AWS CLI
-# RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-# RUN unzip awscliv2.zip
-# RUN ./aws/install
-# RUN aws --version
+# Install AWS CLI
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+RUN unzip awscliv2.zip
+RUN ./aws/install
+RUN aws --version
+
+# Install AWS SDK
+RUN pip3 install boto3
 
 # Copy files
 COPY requirements.txt /app
