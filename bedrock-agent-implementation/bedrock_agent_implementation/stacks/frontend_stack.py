@@ -21,6 +21,7 @@ class FrontendStack(Stack):
     def __init__(self, scope: Construct, construct_id: str,
                  vpc: ec2.Vpc,
                  bedrock_agent_id: str,
+                 dynamodb_table_name: str,
                  bedrock_agent_alias: str) -> None:
         super().__init__(scope, construct_id)
 
