@@ -250,7 +250,6 @@ def clear_input():
     st.session_state.user_input = ""
     st.experimental_rerun()
 
-
     elif authentication_status == False:
         st.error('Username/password is incorrect')
     elif authentication_status == None:
@@ -258,17 +257,6 @@ def clear_input():
 
 if __name__ == '__main__':
     main()
-    try:
-        dynamodb = boto3.resource('dynamodb')
-        table_name = 'ChatHistory'
-        
-        # Check if the table exists
-        existing_tables = dynamodb.meta.client.list_tables()['TableNames']
-        if table_name not in existing_tables:
-            # Create the table
-            table = dynamodb.create_table(
-                TableName=table_name,
-                KeySchema=[
                     {'AttributeName': 'id', 'KeyType': 'HASH'}
                 ],
                 AttributeDefinitions=[
