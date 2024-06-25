@@ -237,8 +237,8 @@ def submit_question():
         finally:
             st.session_state.processing = False
         
-        # Force a rerun to update the UI
-        st.experimental_rerun()
+        # Instead of forcing a rerun, we'll use st.empty() to update the UI
+        st.empty()
 
 def render_chat():
     for idx, interaction in enumerate(st.session_state.conversation):
