@@ -367,8 +367,8 @@ class BedrockAgentStack(Stack):
                     "foundationModel": FOUNDATION_MODEL,
                     "instruction": BEDROCK_AGENT_INSTRUCTION
                 },
-                physical_resource_id=cr.PhysicalResourceId.from_response("agent.agentId"),
-                output_paths=["agent.agentId"]
+                physical_resource_id=cr.PhysicalResourceId.from_response("agentId"),
+                output_paths=["agentId"]
             ),
             on_delete=cr.AwsSdkCall(
                 service="@aws-sdk/client-bedrock-agent",
@@ -385,7 +385,7 @@ class BedrockAgentStack(Stack):
         agent_res.node.add_dependency(bedrock_agent_model_policy)
         agent_res.node.add_dependency(kb_res)
 
-        agent_id = agent_res.get_response_field("agent.agentId")
+        agent_id = agent_res.get_response_field("agentId")
 
         # update agent to associate with the knowledge base
         associate_agent_res = cr.AwsCustomResource(
