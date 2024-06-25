@@ -16,6 +16,6 @@ frontend_stack.FrontendStack(app, f"{APP_PREFIX}FrontendStack",
                              bedrock_agent_id=agent_stack.bedrock_agent_id, 
                              bedrock_agent_alias=agent_stack.bedrock_agent_alias, 
                              vpc=base_stack.vpc,
-                             dynamodb_table_name=base_stack.data_bucket.bucket_name)
+                             dynamodb_table=base_stack.chat_history_table)
 
 app.synth()
