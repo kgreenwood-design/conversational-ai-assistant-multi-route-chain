@@ -48,6 +48,8 @@ if 'show_history' not in st.session_state:
     st.session_state.show_history = False
 if 'user_input' not in st.session_state:
     st.session_state.user_input = ""
+if 'processing' not in st.session_state:
+    st.session_state.processing = False
 
 def format_retrieved_references(references):
     # Extracting the text and link from the references
@@ -166,7 +168,8 @@ def ensure_dynamodb_table_exists():
         print(f"Error ensuring DynamoDB table exists: {e}")
 
 def main():
-    st.title("Conversational AI - Plant Technician")
+    st.set_page_config(page_title="Plant Technician AI", layout="wide")
+    st.title("Plant Technician AI")
 
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
@@ -175,53 +178,62 @@ def main():
     name, authentication_status, username = authenticator.login(fields={'form_name': 'Login'}, location='main')
 
     if authentication_status:
-        authenticator.logout('Logout', 'main')
-        st.write(f'Welcome *{name}*')
+        authenticator.logout('Logout', 'sidebar')
+        st.sidebar.write(f'Welcome, *{name}*')
 
         # Initialize the agent session id if not already set
         if st.session_state.session_id is None:
             st.session_state.session_id = session_generator()
 
-        # Sidebar for conversation history
-        st.sidebar.title("Conversation History")
-        col1, col2 = st.sidebar.columns(2)
-        with col1:
-            if st.button("Toggle History"):
-                st.session_state.show_history = not st.session_state.show_history
-        with col2:
-            if st.button("Clear History"):
-                st.session_state.conversation = []
-                st.session_state.session_id = session_generator()
+        # Sidebar for conversation history and controls
+        st.sidebar.title("Conversation Controls")
+        if st.sidebar.button("Toggle History"):
+            st.session_state.show_history = not st.session_state.show_history
+        if st.sidebar.button("Clear History"):
+            st.session_state.conversation = []
+            st.session_state.session_id = session_generator()
 
-        if st.session_state.show_history:
+        # Main chat interface
+        chat_container = st.container()
+        with chat_container:
             for interaction in st.session_state.conversation:
                 if 'user' in interaction:
-                    st.sidebar.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
                 elif 'assistant' in interaction:
-                    st.sidebar.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
 
-        # Taking user input
-        user_prompt = st.text_input("Message:", key="user_input", value=st.session_state.user_input)
+        # User input area
+        user_input = st.text_input("Ask a question:", key="user_input")
+        col1, col2, col3 = st.columns([1, 1, 5])
+        with col1:
+            submit_button = st.button("Submit")
+        with col2:
+            clear_button = st.button("Clear Input")
 
-        if user_prompt:
+        if clear_button:
+            st.session_state.user_input = ""
+            st.experimental_rerun()
+
+        if submit_button and user_input and not st.session_state.processing:
+            st.session_state.processing = True
             try:
                 # Add the user's prompt to the conversation state
-                st.session_state.conversation.append({'user': user_prompt})
+                st.session_state.conversation.append({'user': user_input})
 
                 # Format and add the answer to the conversation state
-                response = bedrock_client.invoke_agent(
-                    agentId=BEDROCK_AGENT_ID,
-                    agentAliasId=BEDROCK_AGENT_ALIAS,
-                    sessionId=st.session_state.session_id,
-                    endSession=False,
-                    inputText=user_prompt
-                )
-                results = response.get("completion")
-                answer = ""
-                for stream in results:
-                    answer += process_stream(stream)
-                st.session_state.conversation.append(
-                    {'assistant': answer})
+                with st.spinner("Processing your request..."):
+                    response = bedrock_client.invoke_agent(
+                        agentId=BEDROCK_AGENT_ID,
+                        agentAliasId=BEDROCK_AGENT_ALIAS,
+                        sessionId=st.session_state.session_id,
+                        endSession=False,
+                        inputText=user_input
+                    )
+                    results = response.get("completion")
+                    answer = ""
+                    for stream in results:
+                        answer += process_stream(stream)
+                    st.session_state.conversation.append({'assistant': answer})
 
                 # Save the conversation to DynamoDB
                 save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation)
@@ -229,32 +241,25 @@ def main():
                 # Clear the input box after submission
                 st.session_state.user_input = ""
                 
-                # Rerun the app to update the display
+            except Exception as e:
+                st.error("An error occurred. Please try again later.")
+                logging.error(f"Exception when calling Bedrock Agent: {e}")
+            finally:
+                st.session_state.processing = False
                 st.experimental_rerun()
 
-            except Exception as e:
-                # Display an error message if an exception occurs
-                st.error("An error occurred. Please try again later.")
-                print(f"ERROR: Exception when calling Bedrock Agent: {e}")
-
-        # Display the last user input and assistant response
-        if len(st.session_state.conversation) >= 2:
-            last_user = next(item for item in reversed(st.session_state.conversation) if 'user' in item)
-            last_assistant = next(item for item in reversed(st.session_state.conversation) if 'assistant' in item)
-            
-            st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {last_user["user"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {last_assistant["assistant"]}</div>', unsafe_allow_html=True)
-
-        # Add feedback buttons
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("👍 Helpful"):
-                if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}]):
-                    st.success("Thank you for your feedback!")
-        with col2:
-            if st.button("👎 Not Helpful"):
-                if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}]):
-                    st.success("Thank you for your feedback!")
+        # Feedback buttons
+        if st.session_state.conversation:
+            st.write("Was this response helpful?")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("👍 Helpful"):
+                    if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}]):
+                        st.success("Thank you for your feedback!")
+            with col2:
+                if st.button("👎 Not Helpful"):
+                    if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}]):
+                        st.success("Thank you for your feedback!")
 
     elif authentication_status == False:
         st.error('Username/password is incorrect')
