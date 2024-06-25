@@ -1,4 +1,3 @@
-"""BedrockAgent stack to provide a Bedrock Agent"""
 import platform
 import json
 from constructs import Construct
@@ -50,7 +49,6 @@ class BedrockAgentStack(Stack):
                  data_bucket: s3.Bucket, athena_db: str, 
                  athena_output_location: str) -> None:
         super().__init__(scope, construct_id)
-
         try:
             logger.info("Initializing BedrockAgentStack")
             self.check_bedrock_availability()
@@ -179,120 +177,6 @@ class BedrockAgentStack(Stack):
             logger.error(f"Error creating Bedrock agent: {str(e)}")
             raise
 
-    def check_bedrock_availability(self):
-        try:
-            bedrock_client = boto3.client('bedrock')
-            bedrock_client.list_foundation_models()
-            logger.info("Bedrock service is available")
-        except Exception as e:
-            logger.error(f"Bedrock service is not available: {str(e)}")
-            raise
-
-    def create_custom_resource_role(self):
-        custom_res_role = iam.Role(
-            self, "CustomResourceRole",
-            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
-            role_name="CustomResourceRole"
-        )
-        custom_res_role.add_managed_policy(
-            iam.ManagedPolicy.from_aws_managed_policy_name(
-                "AdministratorAccess"
-            )
-        )
-        logger.info("Custom resource role created successfully")
-        return custom_res_role
-
-    def create_bedrock_agent_role(self, data_bucket):
-        bedrock_agent_role = iam.Role(
-            self, "BedrockAgentRole",
-            assumed_by=iam.ServicePrincipal("bedrock.amazonaws.com"),
-            role_name=f"AmazonBedrockExecutionRoleForAgents_{BEDROCK_AGENT_NAME}"
-        )
-        data_bucket.grant_read_write(bedrock_agent_role)
-        self.attach_bedrock_agent_policies(bedrock_agent_role)
-        logger.info("Bedrock agent role created successfully")
-        return bedrock_agent_role
-
-    def attach_bedrock_agent_policies(self, role):
-        policies = [
-            ("BedrockAgentLambdaPolicy", ["lambda:InvokeFunction"]),
-            ("BedrockAgentS3Policy", ["s3:GetObject"]),
-            ("BedrockAgentModelPolicy", ["bedrock:*"])
-        ]
-        for policy_name, actions in policies:
-            policy = iam.Policy(
-                self, policy_name,
-                policy_name=policy_name,
-                statements=[
-                    iam.PolicyStatement(
-                        actions=actions,
-                        resources=["*"]
-                    )
-                ]
-            )
-            role.attach_inline_policy(policy)
-
-    def create_bedrock_kb_role(self):
-        bedrock_kb_role = iam.Role(
-            self, "BedrockKbRole",
-            assumed_by=iam.ServicePrincipal("bedrock.amazonaws.com"),
-            role_name=f"AmazonBedrockExecutionRoleForKnowledgeBase_{BEDROCK_AGENT_NAME}",
-        )
-        logger.info("Bedrock knowledge base role created successfully")
-        return bedrock_kb_role
-
-    def create_bedrock_agent(self, custom_res_role, bedrock_agent_role, bedrock_kb_role):
-        try:
-            agent_res = cr.AwsCustomResource(
-                scope=self,
-                id='BedrockAgent',
-                role=custom_res_role,
-                on_create=cr.AwsSdkCall(
-                    service="@aws-sdk/client-bedrock-agent",
-                    action="CreateAgent",
-                    parameters={
-                        "agentName": BEDROCK_AGENT_NAME,
-                        "agentResourceRoleArn": bedrock_agent_role.role_arn,
-                        "foundationModel": FOUNDATION_MODEL,
-                        "instruction": BEDROCK_AGENT_INSTRUCTION
-                    },
-                    physical_resource_id=cr.PhysicalResourceId.from_response("agentId"),
-                    output_paths=["agentId"]
-                ),
-                on_delete=cr.AwsSdkCall(
-                    service="@aws-sdk/client-bedrock-agent",
-                    action="DeleteAgent",
-                    parameters={
-                        "agentId": cr.PhysicalResourceIdReference(),
-                        "skipResourceInUseCheck": True
-                    }
-                ),
-            )
-            agent_id = agent_res.get_response_field("agentId")
-            
-            # Create agent alias
-            agent_alias_res = cr.AwsCustomResource(
-                scope=self,
-                id='BedrockAgentAlias',
-                role=custom_res_role,
-                on_create=cr.AwsSdkCall(
-                    service="@aws-sdk/client-bedrock-agent",
-                    action="CreateAgentAlias",
-                    parameters={
-                        "agentId": agent_id,
-                        "agentAliasName": BEDROCK_AGENT_ALIAS
-                    },
-                    physical_resource_id=cr.PhysicalResourceId.of("id"),
-                    output_paths=["agentAlias.agentAliasId"]
-                )
-            )
-            agent_alias_id = agent_alias_res.get_response_field("agentAlias.agentAliasId")
-            
-            logger.info(f"Bedrock agent created successfully. Agent ID: {agent_id}, Alias ID: {agent_alias_id}")
-            return agent_id, agent_alias_id
-        except Exception as e:
-            logger.error(f"Error creating Bedrock agent: {str(e)}")
-            raise
         bedrock_kb_role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name(
                 "AdministratorAccess"
@@ -567,10 +451,6 @@ class BedrockAgentStack(Stack):
             logger.error(f"Error creating Bedrock agent: {str(e)}")
             raise
         agent_res.node.add_dependency(bedrock_agent_role)
-        agent_res.node.add_dependency(bedrock_agent_lambda_policy)
-        agent_res.node.add_dependency(bedrock_agent_s3_policy)
-        agent_res.node.add_dependency(bedrock_agent_model_policy)
-        agent_res.node.add_dependency(kb_res)
 
         agent_id = agent_res.get_response_field("agentId")
 
@@ -756,6 +636,3 @@ class BedrockAgentStack(Stack):
         self.bedrock_agent_alias = agent_alias_id
 
         logger.info("BedrockAgentStack initialization completed successfully")
-    except Exception as e:
-        logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
-        raise
