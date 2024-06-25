@@ -95,6 +95,10 @@ except Exception as e:
     st.error("An error occurred during authentication setup. Please check the logs for more details.")
     st.stop()
 
+# Add more detailed logging for authentication process
+def log_auth_attempt(username, status):
+    logger.info(f"Authentication attempt - Username: {username}, Status: {status}")
+
 # Initialize session state
 if 'conversation' not in st.session_state:
     st.session_state.conversation = []
