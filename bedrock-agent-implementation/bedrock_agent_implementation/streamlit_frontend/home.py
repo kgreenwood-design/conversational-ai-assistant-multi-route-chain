@@ -5,11 +5,15 @@ import random
 import string
 import yaml
 import streamlit_authenticator as stauth
+import uuid
+from datetime import datetime
 
 BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
 BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
 
-client = boto3.client('bedrock-agent-runtime')
+bedrock_client = boto3.client('bedrock-agent-runtime')
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('ChatHistory')
 
 # Load configuration file
 with open('config.yaml') as file:
@@ -90,6 +94,17 @@ def session_generator():
 
     return pattern
 
+def save_to_dynamodb(username, session_id, conversation):
+    timestamp = datetime.now().isoformat()
+    item = {
+        'id': str(uuid.uuid4()),
+        'username': username,
+        'session_id': session_id,
+        'conversation': conversation,
+        'timestamp': timestamp
+    }
+    table.put_item(Item=item)
+
 def main():
     st.title("Conversational AI - Plant Technician")
 
@@ -113,7 +128,7 @@ def main():
                 st.session_state.conversation.append({'user': user_prompt})
 
                 # Format and add the answer to the conversation state
-                response = client.invoke_agent(
+                response = bedrock_client.invoke_agent(
                     agentId=BEDROCK_AGENT_ID,
                     agentAliasId=BEDROCK_AGENT_ALIAS,
                     sessionId=st.session_state.session_id,
@@ -127,6 +142,9 @@ def main():
                 st.session_state.conversation.append(
                     {'assistant': answer})
 
+                # Save the conversation to DynamoDB
+                save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation)
+
             except Exception as e:
                 # Display an error message if an exception occurs
                 st.error("An error occurred. Please try again later.")
@@ -138,6 +156,15 @@ def main():
                 st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
             else:
                 st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+
+        # Add feedback buttons
+        if st.button("👍 Helpful"):
+            save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}])
+            st.success("Thank you for your feedback!")
+
+        if st.button("👎 Not Helpful"):
+            save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}])
+            st.success("Thank you for your feedback!")
 
     elif authentication_status == False:
         st.error('Username/password is incorrect')
