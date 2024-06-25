@@ -67,12 +67,12 @@ class BedrockAgentStack(Stack):
             )
             logger.info("Custom resource role created successfully")
 
-        # create a bedrock agent execution role
-        bedrock_agent_role = iam.Role(
-            self, "BedrockAgentRole",
-            assumed_by=iam.ServicePrincipal("bedrock.amazonaws.com"),
-            role_name=f"AmazonBedrockExecutionRoleForAgents_{BEDROCK_AGENT_NAME}"
-        )
+            # create a bedrock agent execution role
+            bedrock_agent_role = iam.Role(
+                self, "BedrockAgentRole",
+                assumed_by=iam.ServicePrincipal("bedrock.amazonaws.com"),
+                role_name=f"AmazonBedrockExecutionRoleForAgents_{BEDROCK_AGENT_NAME}"
+            )
         data_bucket.grant_read_write(bedrock_agent_role)
         bedrock_agent_lambda_policy = iam.Policy(
             self, "BedrockAgentLambdaPolicy",
