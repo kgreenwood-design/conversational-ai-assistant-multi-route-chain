@@ -21,9 +21,11 @@ class FrontendStack(Stack):
     def __init__(self, scope: Construct, construct_id: str,
                  vpc: ec2.Vpc,
                  bedrock_agent_id: str,
-                 dynamodb_table_name: str,
+                 dynamodb_table: dynamodb.Table,
                  bedrock_agent_alias: str) -> None:
         super().__init__(scope, construct_id)
+
+        self.chat_history_table = dynamodb_table
 
         platform_mapping = {
             "x86_64": ecs.CpuArchitecture.X86_64,
@@ -65,7 +67,7 @@ class FrontendStack(Stack):
                     "dynamodb:BatchWriteItem",
                     "dynamodb:DescribeTable"
                 ],
-                resources=[f"arn:aws:dynamodb:{self.region}:{self.account}:table/{dynamodb_table_name}"]
+                resources=[self.chat_history_table.table_arn]
             )
         )
         
