@@ -299,6 +299,12 @@ def main():
             submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
         with col2:
             with st.expander("Options", expanded=False):
+                if st.button("Refresh", key="refresh_button", on_click=lambda: st.experimental_set_query_params(refresh='true'), use_container_width=True):
+                    pass
+                if st.button("New Conversation", key="new_conversation_button", on_click=clear_session_state, use_container_width=True):
+                    pass
+                if st.button("Clear History", key="clear_history_button", on_click=lambda: setattr(st.session_state, 'conversation', []), use_container_width=True):
+                    pass
                 if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
                     pass
 
