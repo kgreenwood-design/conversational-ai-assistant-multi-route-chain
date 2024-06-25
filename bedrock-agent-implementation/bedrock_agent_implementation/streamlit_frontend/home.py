@@ -144,9 +144,10 @@ def save_to_dynamodb(session_id, conversation, feedback=None, username=None):
     item = {
         'session_id': session_id,
         'timestamp': timestamp,
-        'conversation': conversation,
-        'feedback': feedback
+        'conversation': conversation
     }
+    if feedback is not None:
+        item['feedback'] = {str(k): str(v) for k, v in feedback.items()}
     if username:
         item['username'] = username
     try:
