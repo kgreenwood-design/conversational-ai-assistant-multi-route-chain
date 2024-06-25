@@ -50,7 +50,7 @@
 
 /* Buttons */
 .stButton > button {
-    background-color: #4CAF50;
+    background-color: #4A90E2;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -65,7 +65,7 @@
 }
 
 .stButton > button:hover {
-    background-color: #45a049;
+    background-color: #3A7BC8;
 }
 
 /* Feedback buttons */
