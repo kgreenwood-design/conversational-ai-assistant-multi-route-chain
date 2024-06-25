@@ -14,6 +14,8 @@ from botocore.exceptions import ClientError
 # Load environment variables
 load_dotenv()
 
+st.set_page_config(page_title="Plant Technician AI", layout="wide")
+
 BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
 BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
 
@@ -168,7 +170,6 @@ def ensure_dynamodb_table_exists():
         print(f"Error ensuring DynamoDB table exists: {e}")
 
 def main():
-    st.set_page_config(page_title="Plant Technician AI", layout="wide")
     st.title("Plant Technician AI")
 
     # Ensure DynamoDB table exists
