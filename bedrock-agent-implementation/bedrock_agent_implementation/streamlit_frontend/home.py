@@ -16,7 +16,7 @@ import time
 # Load environment variables
 load_dotenv()
 
-st.set_page_config(page_title="Plant Technician AI", layout="wide")
+st.set_page_config(page_title="Analogic Support AI", layout="wide")
 
 # Load and set background image
 def add_bg_from_local(image_file):
