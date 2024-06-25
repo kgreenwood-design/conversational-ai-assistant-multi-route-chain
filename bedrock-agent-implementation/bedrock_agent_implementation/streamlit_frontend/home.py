@@ -284,6 +284,14 @@ def main():
                     if st.button("👎", key=f"thumbs_down_{idx}"):
                         provide_feedback(idx, "negative")
 
+    def render_sidebar_history():
+        st.sidebar.title("Conversation History")
+        for idx, interaction in enumerate(st.session_state.conversation):
+            if 'user' in interaction:
+                st.sidebar.text(f"You: {interaction['user'][:30]}...")
+            elif 'assistant' in interaction:
+                st.sidebar.text(f"Assistant: {interaction['assistant'][:30]}...")
+
     def render_input():
         st.text_area("Ask a question:", key="user_input", height=50, on_change=None)
         col1, col2 = st.columns([3, 1])
