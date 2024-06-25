@@ -27,7 +27,8 @@ def add_bg_from_local(image_file):
     <style>
     .stApp {{
         background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
-        background-size: cover;
+        background-size: 80% auto;
+        background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
     }}
@@ -36,7 +37,10 @@ def add_bg_from_local(image_file):
     unsafe_allow_html=True
     )
 
-add_bg_from_local('image.png')
+if os.path.exists('image.png'):
+    add_bg_from_local('image.png')
+else:
+    st.warning("Background image not found. Please ensure 'image.png' is in the correct directory.")
 
 # Add custom CSS
 st.markdown("""
@@ -325,7 +329,10 @@ def main():
     elif authentication_status == False:
         st.error('Username/password is incorrect')
     elif authentication_status == None:
-        st.image("logo.png", width=200)  # Add your logo image file
+        if os.path.exists("logo.png"):
+            st.image("logo.png", width=150)  # Reduced width from 200 to 150
+        else:
+            st.warning("Logo image not found. Please ensure 'logo.png' is in the correct directory.")
         st.warning('Please enter your username and password')
 
 def clear_input():
