@@ -236,6 +236,28 @@ def submit_question():
         # Force a rerun to update the UI
         st.experimental_rerun()
 
+def render_chat():
+    for idx, interaction in enumerate(st.session_state.conversation):
+        if 'user' in interaction:
+            st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
+        elif 'assistant' in interaction:
+            st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+            col1, col2, col3 = st.columns([1, 1, 5])
+            with col1:
+                if st.button("👍", key=f"thumbs_up_{idx}"):
+                    provide_feedback(idx, "positive")
+            with col2:
+                if st.button("👎", key=f"thumbs_down_{idx}"):
+                    provide_feedback(idx, "negative")
+
+def render_sidebar_history():
+    st.sidebar.title("Conversation History")
+    for idx, interaction in enumerate(st.session_state.conversation):
+        if 'user' in interaction:
+            st.sidebar.text(f"You: {interaction['user'][:30]}...")
+        elif 'assistant' in interaction:
+            st.sidebar.text(f"Assistant: {interaction['assistant'][:30]}...")
+
 def main():
     st.title("Analogic Product Support AI")
 
@@ -286,23 +308,6 @@ def main():
         render_input()
 
     # Ensure the conversation is always displayed
-    render_chat()
-
-    # Ensure the conversation is always displayed
-    render_chat()
-
-    if reverse_rendering:
-        with input_container:
-            render_input()
-        with chat_container:
-            render_chat()
-    else:
-        with chat_container:
-            render_chat()
-        with input_container:
-            render_input()
-    
-    # Add this line to ensure the conversation is always displayed
     render_chat()
 
 def clear_input():
