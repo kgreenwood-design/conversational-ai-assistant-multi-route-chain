@@ -12,37 +12,41 @@ import base64
 import time
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
 
-st.set_page_config(page_title="Analogic Product Support AI", layout="wide")
+st.set_page_config(page_title="Analogic Product Support AI", layout="wide", page_icon="🤖")
 
 # Load and set background image
 def add_bg_from_local(image_file):
-    with open(image_file, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
-    st.markdown(
-        f"""
-        <style>
-        .stApp {{
-            background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
-            background-size: 80% auto;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+    try:
+        with open(image_file, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read())
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                background-image: url(data:image/{"png"};base64,{encoded_string.decode()});
+                background-size: 80% auto;
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+    except Exception as e:
+        logger.error(f"Error loading background image: {str(e)}")
+        st.warning("Background image could not be loaded. Using default background.")
 
 if os.path.exists('image.png'):
     add_bg_from_local('image.png')
 else:
-    st.warning("Background image not found. Please ensure 'image.png' is in the correct directory.")
+    logger.warning("Background image not found. Please ensure 'image.png' is in the correct directory.")
 
 # Add custom CSS
 st.markdown("""
@@ -92,8 +96,11 @@ st.markdown("""
 
 # Load custom CSS
 if os.path.exists('style.css'):
-    with open('style.css') as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    try:
+        with open('style.css') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except Exception as e:
+        logger.error(f"Error loading custom CSS: {str(e)}")
 
 BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
 BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
@@ -103,9 +110,14 @@ if not BEDROCK_AGENT_ALIAS or not BEDROCK_AGENT_ID:
     st.error("BEDROCK_AGENT_ALIAS or BEDROCK_AGENT_ID environment variables are not set.")
     st.stop()
 
-bedrock_client = boto3.client('bedrock-agent-runtime')
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('ChatHistory')
+try:
+    bedrock_client = boto3.client('bedrock-agent-runtime')
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('ChatHistory')
+except Exception as e:
+    st.error("Error initializing AWS clients. Please check your credentials and environment settings.")
+    logger.error(f"Error initializing AWS clients: {str(e)}")
+    st.stop()
 
 # Initialize session state
 if 'conversation' not in st.session_state:
@@ -240,13 +252,11 @@ def provide_feedback(message_index, feedback_type):
     st.experimental_rerun()
 
 def submit_question():
-    if st.session_state.user_input:
-        # Add the user's prompt to the conversation state
-        st.session_state.conversation.append({'user': st.session_state.user_input})
-
-        # Format and add the answer to the conversation state
-        with st.spinner("Processing your request..."):
-            try:
+    if st.session_state.user_input and not st.session_state.processing:
+        st.session_state.processing = True
+        try:
+            st.session_state.conversation.append({'user': st.session_state.user_input})
+            with st.spinner("Processing your request..."):
                 response = bedrock_client.invoke_agent(
                     agentId=BEDROCK_AGENT_ID,
                     agentAliasId=BEDROCK_AGENT_ALIAS,
@@ -259,15 +269,14 @@ def submit_question():
                 for stream in results:
                     answer += process_stream(stream)
                 st.session_state.conversation.append({'assistant': answer})
-
-                # Save the conversation to DynamoDB
-                save_to_dynamodb(st.session_state.session_id, st.session_state.conversation)
-
-                # Clear the input box after submission
-                st.session_state.user_input = ""
-            except Exception as e:
-                st.error("An error occurred. Please try again later.")
-                logging.error(f"Exception when calling Bedrock Agent: {e}")
+            save_to_dynamodb(st.session_state.session_id, st.session_state.conversation)
+            st.session_state.user_input = ""
+        except Exception as e:
+            st.error("An error occurred. Please try again later.")
+            logger.error(f"Exception when calling Bedrock Agent: {e}")
+        finally:
+            st.session_state.processing = False
+            st.experimental_rerun()
 
 def main():
     st.title("Analogic Product Support AI")
