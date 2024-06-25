@@ -66,6 +66,19 @@ class FrontendStack(Stack):
                 resources=[f"arn:aws:dynamodb:{self.region}:{self.account}:table/{dynamodb_table_name}"]
             )
         )
+        
+        # Add CloudWatch Logs permissions
+        app_execute_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:DescribeLogStreams"
+                ],
+                resources=["arn:aws:logs:*:*:*"]
+            )
+        )
         fargate_service = ecs_patterns.ApplicationLoadBalancedFargateService(self, "StreamlitAppService",
                                                                              cluster=ecs_cluster,
                                                                              runtime_platform=ecs.RuntimePlatform(
