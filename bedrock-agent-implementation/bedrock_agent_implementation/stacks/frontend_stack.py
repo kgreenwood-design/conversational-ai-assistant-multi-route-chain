@@ -10,7 +10,8 @@ from aws_cdk import (
     aws_ecs as ecs,
     aws_cloudfront as cloudfront,
     aws_cloudfront_origins as origins,
-    aws_elasticloadbalancingv2 as elbv2
+    aws_elasticloadbalancingv2 as elbv2,
+    aws_dynamodb as dynamodb
 )
 from aws_cdk.aws_ecr_assets import DockerImageAsset
 
