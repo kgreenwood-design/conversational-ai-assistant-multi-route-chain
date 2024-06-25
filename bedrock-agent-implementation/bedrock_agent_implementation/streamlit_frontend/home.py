@@ -245,6 +245,10 @@ def main():
             submit_button = st.button("Submit", on_click=submit_question)
         with col2:
             clear_button = st.button("Clear Input", on_click=clear_input)
+    elif authentication_status == False:
+        st.error('Username/password is incorrect')
+    elif authentication_status == None:
+        st.warning('Please enter your username and password')
 
 def clear_input():
     st.session_state.user_input = ""
