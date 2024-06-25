@@ -34,7 +34,8 @@ class FrontendStack(Stack):
                     "dynamodb:Query",
                     "dynamodb:Scan",
                     "dynamodb:BatchWriteItem",
-                    "dynamodb:DescribeTable"
+                    "dynamodb:DescribeTable",
+                    "cognito-idp:*"
                 ],
                 resources=[f"arn:aws:dynamodb:{self.region}:{self.account}:table/{dynamodb_table_name}"]
             )
