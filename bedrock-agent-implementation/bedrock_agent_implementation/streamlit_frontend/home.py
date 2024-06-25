@@ -238,8 +238,7 @@ def provide_feedback(message_index, feedback_type):
     st.experimental_rerun()
 
 def submit_question():
-    if st.session_state.user_input and not st.session_state.processing:
-        st.session_state.processing = True
+    if st.session_state.user_input:
         try:
             # Add the user's prompt to the conversation state
             st.session_state.conversation.append({'user': st.session_state.user_input})
@@ -268,9 +267,6 @@ def submit_question():
         except Exception as e:
             st.error("An error occurred. Please try again later.")
             logging.error(f"Exception when calling Bedrock Agent: {e}")
-        finally:
-            st.session_state.processing = False
-            st.experimental_rerun()
 
 def main():
     st.title("Analogic Product Support AI")
@@ -286,7 +282,7 @@ def main():
         st.sidebar.write(f'Welcome *{name}*')
 
         # Initialize the agent session id if not already set
-        if st.session_state.session_id is None:
+        if 'session_id' not in st.session_state or st.session_state.session_id is None:
             st.session_state.session_id = session_generator()
 
         # Sidebar for conversation history and controls
@@ -319,7 +315,7 @@ def main():
                             provide_feedback(idx, "negative")
 
         def render_input():
-            user_input = st.text_area("Ask a question:", key="user_input", height=100)
+            st.session_state.user_input = st.text_area("Ask a question:", value=st.session_state.user_input if 'user_input' in st.session_state else "", key="user_input", height=100)
             col1, col2 = st.columns([3, 1])
             with col1:
                 submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
