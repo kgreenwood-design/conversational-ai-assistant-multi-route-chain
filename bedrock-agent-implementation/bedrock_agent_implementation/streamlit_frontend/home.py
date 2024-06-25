@@ -10,6 +10,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import logging
 from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError
 
 # Load environment variables
 load_dotenv()
