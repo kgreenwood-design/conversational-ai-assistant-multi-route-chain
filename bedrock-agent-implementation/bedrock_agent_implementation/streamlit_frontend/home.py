@@ -14,6 +14,10 @@ import base64
 import time
 import extra_streamlit_components as stx
 
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 # Load environment variables
 load_dotenv()
 
@@ -75,13 +79,21 @@ with open('config.yaml') as file:
     config = yaml.safe_load(file)
 
 # Create an authentication object
-authenticator = stauth.Authenticate(
-    config['credentials'],
-    config['cookie']['name'],
-    config['cookie']['key'],
-    config['cookie']['expiry_days'],
-    config['preauthorized']
-)
+logger.debug("Creating authentication object")
+logger.debug(f"Config: {config}")
+try:
+    authenticator = stauth.Authenticate(
+        config['credentials'],
+        config['cookie']['name'],
+        config['cookie']['key'],
+        config['cookie']['expiry_days'],
+        config['preauthorized']
+    )
+    logger.debug("Authentication object created successfully")
+except Exception as e:
+    logger.error(f"Error creating authentication object: {str(e)}")
+    st.error("An error occurred during authentication setup. Please check the logs for more details.")
+    st.stop()
 
 # Initialize session state
 if 'conversation' not in st.session_state:
@@ -263,9 +275,12 @@ def main():
     ensure_dynamodb_table_exists()
 
     # Authentication
+    logger.debug("Starting authentication process")
     name, authentication_status, username = authenticator.login('Login', 'main')
+    logger.debug(f"Authentication result: status={authentication_status}, name={name}, username={username}")
 
     if authentication_status:
+        logger.debug("User authenticated successfully")
         authenticator.logout('Logout', 'sidebar')
         st.sidebar.write(f'Welcome, *{name}*')
 
@@ -329,8 +344,10 @@ def main():
                 render_input()
 
     elif authentication_status == False:
+        logger.debug("Authentication failed: incorrect username/password")
         st.error('Username/password is incorrect')
     elif authentication_status == None:
+        logger.debug("No authentication attempt made yet")
         if os.path.exists("logo.png"):
             st.image("logo.png", width=100)  # Further reduced width from 150 to 100
         else:
