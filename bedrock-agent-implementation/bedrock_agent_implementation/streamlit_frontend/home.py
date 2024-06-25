@@ -287,10 +287,20 @@ def main():
     # Authentication
     logger.debug("Starting authentication process")
     try:
-        if st.session_state.authentication_status is None:
-            st.session_state.name, st.session_state.authentication_status, st.session_state.username = authenticator.login('Login', 'main')
-            logger.debug(f"Authentication result: status={st.session_state.authentication_status}, name={st.session_state.name}, username={st.session_state.username}")
-            log_auth_attempt(st.session_state.username, "Success" if st.session_state.authentication_status else "Failure")
+        name, authentication_status, username = authenticator.login('Login', 'main')
+        if authentication_status is None:
+            st.warning('Please enter your username and password')
+        elif authentication_status:
+            logger.debug(f"Authentication successful: name={name}, username={username}")
+            st.session_state.name = name
+            st.session_state.authentication_status = authentication_status
+            st.session_state.username = username
+            log_auth_attempt(username, "Success")
+        else:
+            logger.debug("Authentication failed")
+            st.error('Username/password is incorrect')
+            log_auth_attempt(username, "Failure")
+            return
     except Exception as e:
         logger.error(f"Error during authentication: {str(e)}")
         st.error("An error occurred during authentication. Please try again.")
@@ -365,16 +375,11 @@ def main():
             logger.error(f"Error setting up authenticated user interface: {str(e)}")
             st.error("An error occurred while setting up the user interface. Please try again.")
             return
-    elif st.session_state.authentication_status is False:
-        logger.warning("Authentication failed")
-        st.error('Username/password is incorrect')
-    elif st.session_state.authentication_status is None:
-        logger.info("No authentication attempt made")
+    else:
         if os.path.exists("logo.png"):
             st.image("logo.png", width=100)  # Further reduced width from 150 to 100
         else:
             st.info("Welcome to Analogic Product Support AI")
-        st.warning('Please enter your username and password')
 
 def clear_input():
     st.session_state.user_input = ""
