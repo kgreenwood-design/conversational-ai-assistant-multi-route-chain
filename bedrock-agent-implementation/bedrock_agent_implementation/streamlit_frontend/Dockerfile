@@ -4,6 +4,7 @@ FROM amazonlinux:2023
 # Install pre-reqs
 RUN yum update -y && yum install shadow-utils cmake g++ gcc python3 python3-pip -y
 RUN pip3 --version
+RUN pip3 install --upgrade pip setuptools
 
 # Create the user
 ARG USERNAME=ec2-user
