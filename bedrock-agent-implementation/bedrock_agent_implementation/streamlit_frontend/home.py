@@ -183,8 +183,6 @@ def provide_feedback(message_index, feedback_type):
     username = st.session_state.get('username')
     save_to_dynamodb(st.session_state.session_id, st.session_state.conversation, st.session_state.feedback, username)
     st.success("Thank you for your feedback!")
-    time.sleep(1)
-    st.experimental_rerun()
 
 def submit_question():
     if st.session_state.user_input and not st.session_state.processing:
@@ -244,10 +242,10 @@ def render_chat():
             st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
             col1, col2, col3 = st.columns([1, 1, 5])
             with col1:
-                if st.button("👍", key=f"thumbs_up_{idx}"):
+                if st.button("👍", key=f"thumbs_up_{idx}_{len(st.session_state.conversation)}"):
                     provide_feedback(idx, "positive")
             with col2:
-                if st.button("👎", key=f"thumbs_down_{idx}"):
+                if st.button("👎", key=f"thumbs_down_{idx}_{len(st.session_state.conversation)}"):
                     provide_feedback(idx, "negative")
 
 def render_sidebar_history():
