@@ -12,13 +12,13 @@ import base64
 import time
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
 
-st.set_page_config(page_title="Analogic Product Support AI", layout="wide", page_icon="🤖")
+st.set_page_config(page_title="Analogic Product Support AI", layout="wide")
 
 # Load and set background image
 def add_bg_from_local(image_file):
@@ -41,52 +41,16 @@ def add_bg_from_local(image_file):
         )
     except Exception as e:
         logger.error(f"Error loading background image: {str(e)}")
-        st.warning("Background image could not be loaded. Using default background.")
 
 if os.path.exists('image.png'):
     add_bg_from_local('image.png')
 else:
-    logger.warning("Background image not found. Please ensure 'image.png' is in the correct directory.")
+    st.warning("Background image not found. Please ensure 'image.png' is in the correct directory.")
 
 # Add custom CSS
 st.markdown("""
 <style>
-    @font-face {
-        font-family: 'Roboto';
-        font-style: normal;
-        font-weight: 100;
-        src: url(https://fonts.gstatic.com/s/roboto/v30/KFOkCnqEu92Fr1MmgWxP.ttf) format('truetype');
-    }
-    @font-face {
-        font-family: 'Roboto';
-        font-style: normal;
-        font-weight: 300;
-        src: url(https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmSU5vAw.ttf) format('truetype');
-    }
-    @font-face {
-        font-family: 'Roboto';
-        font-style: normal;
-        font-weight: 400;
-        src: url(https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Me5Q.ttf) format('truetype');
-    }
-    @font-face {
-        font-family: 'Roboto';
-        font-style: normal;
-        font-weight: 500;
-        src: url(https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmEU9vAw.ttf) format('truetype');
-    }
-    @font-face {
-        font-family: 'Roboto';
-        font-style: normal;
-        font-weight: 700;
-        src: url(https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlvAw.ttf) format('truetype');
-    }
-    @font-face {
-        font-family: 'Roboto';
-        font-style: normal;
-        font-weight: 900;
-        src: url(https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmYUtvAw.ttf) format('truetype');
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Roboto', sans-serif;
@@ -134,60 +98,36 @@ if 'feedback' not in st.session_state:
     st.session_state.feedback = {}
 
 def format_retrieved_references(references):
-    # Extracting the text and link from the references
+    formatted_output = ""
     for reference in references:
         content_text = reference.get("content", {}).get("text", "")
         s3_uri = reference.get("location", {}).get("s3Location", {}).get("uri", "")
-
-        # Formatting the output
-        formatted_output = "Reference Information:\n"
-        formatted_output += f"Content: {content_text}\n"
-        formatted_output += f"S3 URI: {s3_uri}\n"
-
-        return formatted_output
+        formatted_output += f"Reference Information:\nContent: {content_text}\nS3 URI: {s3_uri}\n"
+    return formatted_output
 
 def process_stream(stream):
     try:
         trace = stream.get("trace", {}).get("trace", {}).get("orchestrationTrace", {})
-
         if trace:
-            knowledgeBaseInput = trace.get("invocationInput", {}).get(
-                "knowledgeBaseLookupInput", {}
-            )
+            knowledgeBaseInput = trace.get("invocationInput", {}).get("knowledgeBaseLookupInput", {})
             if knowledgeBaseInput:
-                print(
-                    f'Looking up in knowledgebase: {knowledgeBaseInput.get("text", "")}'
-                )
-            knowledgeBaseOutput = trace.get("observation", {}).get(
-                "knowledgeBaseLookupOutput", {}
-            )
+                logger.info(f'Looking up in knowledgebase: {knowledgeBaseInput.get("text", "")}')
+            knowledgeBaseOutput = trace.get("observation", {}).get("knowledgeBaseLookupOutput", {})
             if knowledgeBaseOutput:
-                retrieved_references = knowledgeBaseOutput.get(
-                    "retrievedReferences", {}
-                )
+                retrieved_references = knowledgeBaseOutput.get("retrievedReferences", {})
                 if retrieved_references:
-                    print("Formatted References:")
                     return format_retrieved_references(retrieved_references)
-
-        # Handle 'chunk' data
         if "chunk" in stream:
-            print("This is the final answer:")
             text = stream["chunk"]["bytes"].decode("utf-8")
             return text
-
     except Exception as e:
-        print(f"Error processing stream: {e}")
-        print(stream)
+        logger.error(f"Error processing stream: {e}")
 
 def session_generator():
-    # Generate random characters and digits
-    digits = ''.join(random.choice(string.digits) for _ in range(4))  # Generating 4 random digits
-    chars = ''.join(random.choice(string.ascii_lowercase) for _ in range(3))  # Generating 3 random characters
-    
-    # Construct the pattern (1a23b-4c)
+    digits = ''.join(random.choice(string.digits) for _ in range(4))
+    chars = ''.join(random.choice(string.ascii_lowercase) for _ in range(3))
     pattern = f"{digits[0]}{chars[0]}{digits[1:3]}{chars[1]}-{digits[3]}{chars[2]}"
-    print("Session ID: " + str(pattern))
-
+    logger.info(f"Session ID: {pattern}")
     return pattern
 
 def save_to_dynamodb(session_id, conversation, feedback=None):
@@ -216,33 +156,21 @@ def save_to_dynamodb(session_id, conversation, feedback=None):
 
 def ensure_dynamodb_table_exists():
     try:
-        dynamodb = boto3.resource('dynamodb')
         table_name = 'ChatHistory'
-        
-        # Check if the table exists
         existing_tables = dynamodb.meta.client.list_tables()['TableNames']
         if table_name not in existing_tables:
-            # Create the table
             table = dynamodb.create_table(
                 TableName=table_name,
-                KeySchema=[
-                    {'AttributeName': 'id', 'KeyType': 'HASH'}
-                ],
-                AttributeDefinitions=[
-                    {'AttributeName': 'id', 'AttributeType': 'S'}
-                ],
-                ProvisionedThroughput={
-                    'ReadCapacityUnits': 5,
-                    'WriteCapacityUnits': 5
-                }
+                KeySchema=[{'AttributeName': 'id', 'KeyType': 'HASH'}],
+                AttributeDefinitions=[{'AttributeName': 'id', 'AttributeType': 'S'}],
+                ProvisionedThroughput={'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
             )
-            # Wait for the table to be created
             table.meta.client.get_waiter('table_exists').wait(TableName=table_name)
-            print(f"Table {table_name} created successfully.")
+            logger.info(f"Table {table_name} created successfully.")
         else:
-            print(f"Table {table_name} already exists.")
+            logger.info(f"Table {table_name} already exists.")
     except ClientError as e:
-        print(f"Error ensuring DynamoDB table exists: {e}")
+        logger.error(f"Error ensuring DynamoDB table exists: {e}")
 
 def provide_feedback(message_index, feedback_type):
     st.session_state.feedback[message_index] = feedback_type
