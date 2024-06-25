@@ -250,53 +250,6 @@ def clear_input():
     st.session_state.user_input = ""
     st.experimental_rerun()
 
-def submit_question():
-    if st.session_state.user_input and not st.session_state.processing:
-            st.session_state.processing = True
-            try:
-                # Add the user's prompt to the conversation state
-                st.session_state.conversation.append({'user': user_input})
-
-                # Format and add the answer to the conversation state
-                with st.spinner("Processing your request..."):
-                    response = bedrock_client.invoke_agent(
-                        agentId=BEDROCK_AGENT_ID,
-                        agentAliasId=BEDROCK_AGENT_ALIAS,
-                        sessionId=st.session_state.session_id,
-                        endSession=False,
-                        inputText=user_input
-                    )
-                    results = response.get("completion")
-                    answer = ""
-                    for stream in results:
-                        answer += process_stream(stream)
-                    st.session_state.conversation.append({'assistant': answer})
-
-                # Save the conversation to DynamoDB
-                save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation)
-
-                # Clear the input box after submission
-                st.session_state.user_input = ""
-                
-            except Exception as e:
-                st.error("An error occurred. Please try again later.")
-                logging.error(f"Exception when calling Bedrock Agent: {e}")
-            finally:
-                st.session_state.processing = False
-                st.experimental_rerun()
-
-        # Feedback buttons
-        if st.session_state.conversation:
-            st.write("Was this response helpful?")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("👍 Helpful"):
-                    if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "helpful"}]):
-                        st.success("Thank you for your feedback!")
-            with col2:
-                if st.button("👎 Not Helpful"):
-                    if save_to_dynamodb(username, st.session_state.session_id, st.session_state.conversation + [{"feedback": "not helpful"}]):
-                        st.success("Thank you for your feedback!")
 
     elif authentication_status == False:
         st.error('Username/password is incorrect')
