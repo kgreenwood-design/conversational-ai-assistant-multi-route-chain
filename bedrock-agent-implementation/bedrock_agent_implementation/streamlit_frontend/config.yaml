@@ -1,0 +1,17 @@
+credentials:
+  usernames:
+    jsmith:
+      email: jsmith@example.com
+      name: John Smith
+      password: $2b$12$K3GvzYhZlWxXRxKVD8bNe.jTX9mifNxnmyKw.s3H7n8AjF1DYC9Oy # To be replaced with a hashed password
+    rbriggs:
+      email: rbriggs@example.com
+      name: Rebecca Briggs
+      password: $2b$12$uNaTgvGPG9rMbzOJHX0M6.V1kMdxmMasw8r3Z/Cj0K2zCm/BQDwCK # To be replaced with a hashed password
+cookie:
+  expiry_days: 30
+  key: some_signature_key
+  name: some_cookie_name
+preauthorized:
+  emails:
+  - melsby@example.com

@@ -3,11 +3,26 @@ import boto3
 import os
 import random
 import string
+import yaml
+import streamlit_authenticator as stauth
 
 BEDROCK_AGENT_ALIAS = os.getenv('BEDROCK_AGENT_ALIAS')
 BEDROCK_AGENT_ID = os.getenv('BEDROCK_AGENT_ID')
 
 client = boto3.client('bedrock-agent-runtime')
+
+# Load configuration file
+with open('config.yaml') as file:
+    config = yaml.safe_load(file)
+
+# Create an authentication object
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days'],
+    config['preauthorized']
+)
 
 def format_retrieved_references(references):
     # Extracting the text and link from the references
@@ -72,53 +87,65 @@ def session_generator():
 def main():
     st.title("Conversational AI - Plant Technician")
 
-    # Initialize the conversation state
-    if 'conversation' not in st.session_state:
-        st.session_state.conversation = []
-    # Initialize the agent session id
-    if 'session_id' not in st.session_state:
-        st.session_state.session_id = session_generator()
+    # Authentication
+    name, authentication_status, username = authenticator.login('Login', 'main')
 
-    # Taking user input
-    user_prompt = st.text_input("Message:")
+    if authentication_status:
+        authenticator.logout('Logout', 'main')
+        st.write(f'Welcome *{name}*')
 
-    if user_prompt:
-        try:
-            # Add the user's prompt to the conversation state
-            st.session_state.conversation.append({'user': user_prompt})
+        # Initialize the conversation state
+        if 'conversation' not in st.session_state:
+            st.session_state.conversation = []
+        # Initialize the agent session id
+        if 'session_id' not in st.session_state:
+            st.session_state.session_id = session_generator()
 
-            # Format and add the answer to the conversation state
-            response = client.invoke_agent(
-                agentId=BEDROCK_AGENT_ID,
-                agentAliasId=BEDROCK_AGENT_ALIAS,
-                sessionId=st.session_state.session_id,
-                endSession=False,
-                inputText=user_prompt
-            )
-            results = response.get("completion")
-            answer = ""
-            for stream in results:
-                answer += process_stream(stream)
-            st.session_state.conversation.append(
-                {'assistant': answer})
+        # Taking user input
+        user_prompt = st.text_input("Message:")
 
-        except Exception as e:
-            # Display an error message if an exception occurs
-            st.error(f"Error occurred when calling MultiRouteChain. Please review application logs for more information.")
-            print(f"ERROR: Exception when calling MultiRouteChain: {e}")
-            formatted_answer = f"Error occurred: {e}"
-            st.session_state.conversation.append(
-                {'assistant': formatted_answer})
+        if user_prompt:
+            try:
+                # Add the user's prompt to the conversation state
+                st.session_state.conversation.append({'user': user_prompt})
 
-    # Display the conversation
-    for interaction in st.session_state.conversation:
-        with st.container():
-            if 'user' in interaction:
-                # Apply a custom color to the "User" alias using inline CSS
-                st.markdown(f'<span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}', unsafe_allow_html=True)
-            else:
-                # Apply a different custom color to the "Assistant" alias using inline CSS
-                st.markdown(f'<span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}', unsafe_allow_html=True)
+                # Format and add the answer to the conversation state
+                response = client.invoke_agent(
+                    agentId=BEDROCK_AGENT_ID,
+                    agentAliasId=BEDROCK_AGENT_ALIAS,
+                    sessionId=st.session_state.session_id,
+                    endSession=False,
+                    inputText=user_prompt
+                )
+                results = response.get("completion")
+                answer = ""
+                for stream in results:
+                    answer += process_stream(stream)
+                st.session_state.conversation.append(
+                    {'assistant': answer})
+
+            except Exception as e:
+                # Display an error message if an exception occurs
+                st.error(f"Error occurred when calling MultiRouteChain. Please review application logs for more information.")
+                print(f"ERROR: Exception when calling MultiRouteChain: {e}")
+                formatted_answer = f"Error occurred: {e}"
+                st.session_state.conversation.append(
+                    {'assistant': formatted_answer})
+
+        # Display the conversation
+        for interaction in st.session_state.conversation:
+            with st.container():
+                if 'user' in interaction:
+                    # Apply a custom color to the "User" alias using inline CSS
+                    st.markdown(f'<span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}', unsafe_allow_html=True)
+                else:
+                    # Apply a different custom color to the "Assistant" alias using inline CSS
+                    st.markdown(f'<span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}', unsafe_allow_html=True)
+
+    elif authentication_status == False:
+        st.error('Username/password is incorrect')
+    elif authentication_status == None:
+        st.warning('Please enter your username and password')
 
 if __name__ == '__main__':
     main()

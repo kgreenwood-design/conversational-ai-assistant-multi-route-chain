@@ -23,6 +23,7 @@ WORKDIR /app
 # Copy files
 COPY requirements.txt /app
 COPY home.py /app
+COPY config.yaml /app
 
 RUN pip3 install -r requirements.txt
 
