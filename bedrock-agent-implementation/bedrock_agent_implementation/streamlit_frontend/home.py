@@ -24,6 +24,12 @@ authenticator = stauth.Authenticate(
     config['preauthorized']
 )
 
+# Initialize session state
+if 'conversation' not in st.session_state:
+    st.session_state.conversation = []
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = None
+
 def format_retrieved_references(references):
     # Extracting the text and link from the references
     for reference in references:
@@ -94,11 +100,8 @@ def main():
         authenticator.logout('Logout', 'main')
         st.write(f'Welcome *{name}*')
 
-        # Initialize the conversation state
-        if 'conversation' not in st.session_state:
-            st.session_state.conversation = []
-        # Initialize the agent session id
-        if 'session_id' not in st.session_state:
+        # Initialize the agent session id if not already set
+        if st.session_state.session_id is None:
             st.session_state.session_id = session_generator()
 
         # Taking user input
@@ -126,21 +129,15 @@ def main():
 
             except Exception as e:
                 # Display an error message if an exception occurs
-                st.error(f"Error occurred when calling MultiRouteChain. Please review application logs for more information.")
-                print(f"ERROR: Exception when calling MultiRouteChain: {e}")
-                formatted_answer = f"Error occurred: {e}"
-                st.session_state.conversation.append(
-                    {'assistant': formatted_answer})
+                st.error("An error occurred. Please try again later.")
+                print(f"ERROR: Exception when calling Bedrock Agent: {e}")
 
         # Display the conversation
         for interaction in st.session_state.conversation:
-            with st.container():
-                if 'user' in interaction:
-                    # Apply a custom color to the "User" alias using inline CSS
-                    st.markdown(f'<span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}', unsafe_allow_html=True)
-                else:
-                    # Apply a different custom color to the "Assistant" alias using inline CSS
-                    st.markdown(f'<span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}', unsafe_allow_html=True)
+            if 'user' in interaction:
+                st.markdown(f'<div style="background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #4A90E2; font-weight: bold;">User:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<div style="background-color: #e6f3ff; padding: 10px; border-radius: 5px; margin-bottom: 10px;"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
 
     elif authentication_status == False:
         st.error('Username/password is incorrect')
