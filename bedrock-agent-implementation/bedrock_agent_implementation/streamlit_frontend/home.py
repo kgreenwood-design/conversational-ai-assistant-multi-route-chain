@@ -94,7 +94,7 @@ def main():
     st.title("Conversational AI - Plant Technician")
 
     # Authentication
-    name, authentication_status, username = authenticator.login('Login', 'main')
+    name, authentication_status, username = authenticator.login(fields={'form_name': 'Login'}, location='main')
 
     if authentication_status:
         authenticator.logout('Logout', 'main')
