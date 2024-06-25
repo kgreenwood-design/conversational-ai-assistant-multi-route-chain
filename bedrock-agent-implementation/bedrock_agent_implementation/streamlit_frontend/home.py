@@ -135,6 +135,36 @@ def save_to_dynamodb(username, session_id, conversation):
         st.warning(f"An unexpected error occurred: {str(e)}")
         st.info("Your feedback is still valuable, even if we couldn't save the conversation.")
 
+def ensure_dynamodb_table_exists():
+    try:
+        dynamodb = boto3.resource('dynamodb')
+        table_name = 'ChatHistory'
+        
+        # Check if the table exists
+        existing_tables = dynamodb.meta.client.list_tables()['TableNames']
+        if table_name not in existing_tables:
+            # Create the table
+            table = dynamodb.create_table(
+                TableName=table_name,
+                KeySchema=[
+                    {'AttributeName': 'id', 'KeyType': 'HASH'}
+                ],
+                AttributeDefinitions=[
+                    {'AttributeName': 'id', 'AttributeType': 'S'}
+                ],
+                ProvisionedThroughput={
+                    'ReadCapacityUnits': 5,
+                    'WriteCapacityUnits': 5
+                }
+            )
+            # Wait for the table to be created
+            table.meta.client.get_waiter('table_exists').wait(TableName=table_name)
+            print(f"Table {table_name} created successfully.")
+        else:
+            print(f"Table {table_name} already exists.")
+    except ClientError as e:
+        print(f"Error ensuring DynamoDB table exists: {e}")
+
 def main():
     st.title("Conversational AI - Plant Technician")
 
@@ -223,7 +253,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-def ensure_dynamodb_table_exists():
     try:
         dynamodb = boto3.resource('dynamodb')
         table_name = 'ChatHistory'
