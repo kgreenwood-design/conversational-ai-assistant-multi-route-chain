@@ -393,7 +393,7 @@ class BedrockAgentStack(Stack):
                     "dataSourceConfiguration": {
                         "type": "S3",
                         "s3Configuration": {
-                            "bucketArn": data_bucket.bucket_arn,
+                            "bucketArn": self.data_bucket.bucket_arn,
                             "inclusionPrefixes": ["iot_device_info/"]
                         }
                     }
@@ -486,8 +486,8 @@ class BedrockAgentStack(Stack):
             handler='lambda_function.lambda_handler',
             timeout=cdk.Duration.seconds(300),
             environment={
-                'ATHENA_DATABASE': athena_db,
-                'ATHENA_OUTPUT_LOCATION': athena_output_location
+                'ATHENA_DATABASE': self.athena_db,
+                'ATHENA_OUTPUT_LOCATION': self.athena_output_location
             },
         )
         action_1_lambda.add_permission(
@@ -501,7 +501,7 @@ class BedrockAgentStack(Stack):
         action_1_lambda.role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name("AmazonAthenaFullAccess")
         )
-        data_bucket.grant_read_write(action_1_lambda.role)
+        self.data_bucket.grant_read_write(action_1_lambda.role)
 
         # action 2 is the device action lambda 
         sender = CfnParameter(self, "sender", type="String",
@@ -553,7 +553,7 @@ class BedrockAgentStack(Stack):
                     "actionGroupState": "ENABLED",
                     "apiSchema": {
                         "s3": {
-                            "s3BucketName": data_bucket.bucket_name,
+                            "s3BucketName": self.data_bucket.bucket_name,
                             "s3ObjectKey": f"open_api_schema/check_device_metrics.json"
                         }
                     }
@@ -583,7 +583,7 @@ class BedrockAgentStack(Stack):
                     "actionGroupState": "ENABLED",
                     "apiSchema": {
                         "s3": {
-                            "s3BucketName": data_bucket.bucket_name,
+                            "s3BucketName": self.data_bucket.bucket_name,
                             "s3ObjectKey": f"open_api_schema/action_on_device.json"
                         }
                     }
