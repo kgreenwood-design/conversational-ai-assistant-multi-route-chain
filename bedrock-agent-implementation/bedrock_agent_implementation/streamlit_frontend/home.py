@@ -247,7 +247,7 @@ def main():
                         provide_feedback(idx, "negative")
 
     def render_input():
-        st.text_area("Ask a question:", key="user_input", height=50)
+        st.text_area("Ask a question:", key="user_input", height=50, on_change=None)
         col1, col2 = st.columns([3, 1])
         with col1:
             submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
