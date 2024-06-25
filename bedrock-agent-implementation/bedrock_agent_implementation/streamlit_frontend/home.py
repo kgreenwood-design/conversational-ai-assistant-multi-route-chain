@@ -74,17 +74,13 @@ table = dynamodb.Table('ChatHistory')
 with open('config.yaml') as file:
     config = yaml.safe_load(file)
 
-# Create a cookie manager
-cookie_manager = stx.CookieManager()
-
 # Create an authentication object
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
     config['cookie']['key'],
     config['cookie']['expiry_days'],
-    config['preauthorized'],
-    cookie_manager=cookie_manager
+    config['preauthorized']
 )
 
 # Initialize session state
