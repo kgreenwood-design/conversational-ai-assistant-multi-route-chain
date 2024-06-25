@@ -21,9 +21,6 @@ load_dotenv()
 
 st.set_page_config(page_title="Analogic Product Support- Development", layout="wide")
 
-# Center the title
-st.markdown("<h1 style='text-align: center;'>Analogic Product Support- Development</h1>", unsafe_allow_html=True)
-
 # Load and display logo
 def add_logo(image_file):
     try:
@@ -42,6 +39,9 @@ if os.path.exists('image.png'):
     add_logo('image.png')
 else:
     st.warning("Logo image not found. Please ensure 'image.png' is in the correct directory.")
+
+# Center the title
+st.markdown("<h1 style='text-align: center;'>Analogic Product Support- Development</h1>", unsafe_allow_html=True)
 
 # Add custom CSS
 st.markdown("""
