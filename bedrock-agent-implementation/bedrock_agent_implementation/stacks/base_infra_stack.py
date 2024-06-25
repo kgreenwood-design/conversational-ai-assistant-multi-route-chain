@@ -169,7 +169,7 @@ class BaseInfraStack(Stack):
         }
 
         return AwsSdkCall(            
-            service="@aws-sdk/client-glue",
+            service="glue",
             action='StartCrawler',
             parameters=params,
             physical_resource_id=PhysicalResourceId.of(
@@ -183,7 +183,7 @@ class BaseInfraStack(Stack):
         }
 
         return AwsSdkCall(            
-            service="@aws-sdk/client-glue",
+            service="glue",
             action='DeleteDatabase',
             parameters=params,
             physical_resource_id=PhysicalResourceId.of(
