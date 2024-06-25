@@ -3,8 +3,6 @@ import boto3
 import os
 import random
 import string
-import yaml
-import streamlit_authenticator as stauth
 import uuid
 from datetime import datetime
 from dotenv import load_dotenv
@@ -12,7 +10,6 @@ import logging
 from botocore.exceptions import ClientError
 import base64
 import time
-import extra_streamlit_components as stx
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -74,35 +71,6 @@ if not BEDROCK_AGENT_ALIAS or not BEDROCK_AGENT_ID:
 bedrock_client = boto3.client('bedrock-agent-runtime')
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('ChatHistory')
-
-# Load configuration file
-if os.path.exists('config.yaml'):
-    with open('config.yaml') as file:
-        config = yaml.safe_load(file)
-else:
-    st.error("Configuration file not found. Please ensure 'config.yaml' is in the correct directory.")
-    st.stop()
-
-# Create an authentication object
-logger.debug("Creating authentication object")
-logger.debug(f"Config: {config}")
-try:
-    authenticator = stauth.Authenticate(
-        config['credentials'],
-        config['cookie']['name'],
-        config['cookie']['key'],
-        config['cookie']['expiry_days'],
-        config['preauthorized']
-    )
-    logger.debug("Authentication object created successfully")
-except Exception as e:
-    logger.error(f"Error creating authentication object: {str(e)}")
-    st.error("An error occurred during authentication setup. Please check the logs for more details.")
-    st.stop()
-
-# Add more detailed logging for authentication process
-def log_auth_attempt(username, status):
-    logger.info(f"Authentication attempt - Username: {username}, Status: {status}")
 
 # Initialize session state
 if 'conversation' not in st.session_state:
@@ -175,11 +143,10 @@ def session_generator():
 
     return pattern
 
-def save_to_dynamodb(username, session_id, conversation, feedback=None):
+def save_to_dynamodb(session_id, conversation, feedback=None):
     timestamp = datetime.now().isoformat()
     item = {
         'id': str(uuid.uuid4()),
-        'username': username,
         'session_id': session_id,
         'conversation': conversation,
         'timestamp': timestamp,
@@ -187,7 +154,7 @@ def save_to_dynamodb(username, session_id, conversation, feedback=None):
     }
     try:
         table.put_item(Item=item)
-        st.success("Conversation saved successfully!")
+        logging.info("Conversation saved successfully!")
     except ClientError as e:
         error_code = e.response['Error']['Code']
         error_message = e.response['Error']['Message']
@@ -260,7 +227,7 @@ def submit_question():
                 st.session_state.conversation.append({'assistant': answer})
 
             # Save the conversation to DynamoDB
-            save_to_dynamodb(st.session_state.username, st.session_state.session_id, st.session_state.conversation)
+            save_to_dynamodb(st.session_state.session_id, st.session_state.conversation)
 
             # Clear the input box after submission
             st.session_state.user_input = ""
@@ -277,80 +244,64 @@ def main():
     # Ensure DynamoDB table exists
     ensure_dynamodb_table_exists()
 
-    # Authentication
-    name, authentication_status, username = authenticator.login('Login', 'main')
+    # Initialize the agent session id if not already set
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = session_generator()
 
-    if authentication_status:
-        authenticator.logout('Logout', 'sidebar')
-        st.sidebar.write(f'Welcome *{name}*')
+    # Sidebar for conversation history and controls
+    st.sidebar.title("Conversation Controls")
+    if st.sidebar.button("Toggle History"):
+        st.session_state.show_history = not st.session_state.show_history
+    if st.sidebar.button("Clear History"):
+        st.session_state.conversation = []
+        st.session_state.session_id = session_generator()
 
-        # Initialize the agent session id if not already set
-        if 'session_id' not in st.session_state:
-            st.session_state.session_id = session_generator()
+    # Option to reverse rendering
+    reverse_rendering = st.sidebar.checkbox("Reverse Rendering")
 
-        # Sidebar for conversation history and controls
-        st.sidebar.title("Conversation Controls")
-        if st.sidebar.button("Toggle History"):
-            st.session_state.show_history = not st.session_state.show_history
-        if st.sidebar.button("Clear History"):
-            st.session_state.conversation = []
-            st.session_state.session_id = session_generator()
+    # Main chat interface
+    chat_container = st.container()
+    input_container = st.container()
 
-        # Option to reverse rendering
-        reverse_rendering = st.sidebar.checkbox("Reverse Rendering")
+    def render_chat():
+        for idx, interaction in enumerate(st.session_state.conversation):
+            if 'user' in interaction:
+                st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
+            elif 'assistant' in interaction:
+                st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
+                col1, col2, col3 = st.columns([1, 1, 5])
+                with col1:
+                    if st.button("👍", key=f"thumbs_up_{idx}"):
+                        provide_feedback(idx, "positive")
+                with col2:
+                    if st.button("👎", key=f"thumbs_down_{idx}"):
+                        provide_feedback(idx, "negative")
 
-        # Main chat interface
-        chat_container = st.container()
-        input_container = st.container()
+    def render_input():
+        st.text_area("Ask a question:", key="user_input", height=100)
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
+        with col2:
+            with st.expander("Options", expanded=False):
+                if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
+                    pass
+                if st.button("Clear History", key="clear_history_button", use_container_width=True):
+                    st.session_state.conversation = []
+                    st.session_state.session_id = session_generator()
+                    st.session_state.feedback = {}
+                    st.experimental_rerun()
 
-        def render_chat():
-            for idx, interaction in enumerate(st.session_state.conversation):
-                if 'user' in interaction:
-                    st.markdown(f'<div class="user-message"><span style="color: #4A90E2; font-weight: bold;">You:</span> {interaction["user"]}</div>', unsafe_allow_html=True)
-                elif 'assistant' in interaction:
-                    st.markdown(f'<div class="assistant-message"><span style="color: #50E3C2; font-weight: bold;">Assistant:</span> {interaction["assistant"]}</div>', unsafe_allow_html=True)
-                    col1, col2, col3 = st.columns([1, 1, 5])
-                    with col1:
-                        if st.button("👍", key=f"thumbs_up_{idx}"):
-                            provide_feedback(idx, "positive")
-                    with col2:
-                        if st.button("👎", key=f"thumbs_down_{idx}"):
-                            provide_feedback(idx, "negative")
-
-        def render_input():
-            st.text_area("Ask a question:", key="user_input", height=100)
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
-            with col2:
-                with st.expander("Options", expanded=False):
-                    if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
-                        pass
-                    if st.button("Clear History", key="clear_history_button", use_container_width=True):
-                        st.session_state.conversation = []
-                        st.session_state.session_id = session_generator()
-                        st.session_state.feedback = {}
-                        st.experimental_rerun()
-
-        if reverse_rendering:
-            with input_container:
-                render_input()
-            with chat_container:
-                render_chat()
-        else:
-            with chat_container:
-                render_chat()
-            with input_container:
-                render_input()
-
-    elif authentication_status == False:
-        st.error('Username/password is incorrect')
-    elif authentication_status == None:
-        if os.path.exists("logo.png"):
-            st.image("logo.png", width=100)  # Further reduced width from 150 to 100
-        else:
-            st.info("Welcome to Analogic Product Support AI")
-        st.warning('Please enter your username and password')
+    if reverse_rendering:
+        with input_container:
+            render_input()
+        with chat_container:
+            render_chat()
+    else:
+        with chat_container:
+            render_chat()
+        with input_container:
+            render_input()
 
 def clear_input():
     st.session_state.user_input = ""
