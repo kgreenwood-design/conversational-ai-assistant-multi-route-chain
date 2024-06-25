@@ -284,9 +284,9 @@ def main():
         render_chat()
     with input_container:
         render_input()
-                    st.session_state.session_id = session_generator()
-                    st.session_state.feedback = {}
-                    st.experimental_rerun()
+
+    # Ensure the conversation is always displayed
+    render_chat()
 
     if reverse_rendering:
         with input_container:
