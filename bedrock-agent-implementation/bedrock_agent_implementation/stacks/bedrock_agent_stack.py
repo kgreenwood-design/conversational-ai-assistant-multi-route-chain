@@ -759,6 +759,3 @@ class BedrockAgentStack(Stack):
     except Exception as e:
         logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
         raise
-except Exception as e:
-    logger.error(f"Error in BedrockAgentStack initialization: {str(e)}")
-    raise
