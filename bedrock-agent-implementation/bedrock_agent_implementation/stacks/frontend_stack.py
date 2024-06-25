@@ -61,7 +61,9 @@ class FrontendStack(Stack):
                     "dynamodb:UpdateItem",
                     "dynamodb:DeleteItem",
                     "dynamodb:Query",
-                    "dynamodb:Scan"
+                    "dynamodb:Scan",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:DescribeTable"
                 ],
                 resources=[f"arn:aws:dynamodb:{self.region}:{self.account}:table/{dynamodb_table_name}"]
             )
