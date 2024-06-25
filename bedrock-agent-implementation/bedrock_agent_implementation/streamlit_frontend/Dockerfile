@@ -25,7 +25,8 @@ RUN aws --version
 
 # Install AWS SDK and configure credentials
 RUN pip3 install boto3
-RUN echo '[default]\nregion = ${AWS_REGION}\naws_access_key_id = ${AWS_ACCESS_KEY_ID}\naws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}\naws_session_token = ${AWS_SESSION_TOKEN}' > /root/.aws/credentials
+RUN mkdir -p /root/.aws && \
+    echo '[default]\nregion = ${AWS_REGION}\naws_access_key_id = ${AWS_ACCESS_KEY_ID}\naws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}\naws_session_token = ${AWS_SESSION_TOKEN}' > /root/.aws/credentials
 
 # Copy files
 COPY requirements.txt /app
