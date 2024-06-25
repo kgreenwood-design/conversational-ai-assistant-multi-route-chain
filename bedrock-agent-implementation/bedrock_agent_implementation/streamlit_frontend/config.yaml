@@ -1,13 +1,13 @@
 credentials:
   usernames:
-    ProductSupport:
+    jsmith:
       email: jsmith@example.com
       name: John Smith
-      password: Alog2024! # To be replaced with a hashed password
+      password: $2b$12$uNaTgvGPG9rMbzOJHX0M6.V1kMdxmMasw8r3Z/Cj0K2zCm/BQDwCK # Hashed password
     rbriggs:
       email: rbriggs@example.com
       name: Rebecca Briggs
-      password: $2b$12$uNaTgvGPG9rMbzOJHX0M6.V1kMdxmMasw8r3Z/Cj0K2zCm/BQDwCK # To be replaced with a hashed password
+      password: $2b$12$uNaTgvGPG9rMbzOJHX0M6.V1kMdxmMasw8r3Z/Cj0K2zCm/BQDwCK # Hashed password
 cookie:
   expiry_days: 30
   key: some_signature_key
