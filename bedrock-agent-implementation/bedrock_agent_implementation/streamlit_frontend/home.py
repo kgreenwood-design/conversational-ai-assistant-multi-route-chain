@@ -305,15 +305,16 @@ def main():
             user_input = st.text_area("Ask a question:", key="user_input", height=100)
             col1, col2, col3, col4 = st.columns([1, 1, 1, 4])
             with col1:
-                submit_button = st.button("Submit", on_click=submit_question)
+                if st.button("Clear Input", key="clear_input_button", on_click=clear_input):
+                    pass
             with col2:
-                clear_button = st.button("Clear Input", on_click=clear_input)
-            with col3:
-                if st.button("Clear History"):
+                if st.button("Clear History", key="clear_history_button"):
                     st.session_state.conversation = []
                     st.session_state.session_id = session_generator()
                     st.session_state.feedback = {}
                     st.experimental_rerun()
+            with col4:
+                submit_button = st.button("Submit", key="submit_button", on_click=submit_question)
 
         if reverse_rendering:
             with input_container:
