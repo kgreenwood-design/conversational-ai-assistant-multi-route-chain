@@ -303,18 +303,18 @@ def main():
 
         def render_input():
             user_input = st.text_area("Ask a question:", key="user_input", height=100)
-            col1, col2, col3, col4 = st.columns([1, 1, 1, 4])
+            col1, col2 = st.columns([3, 1])
             with col1:
-                if st.button("Clear Input", key="clear_input_button", on_click=clear_input):
-                    pass
+                submit_button = st.button("Submit", key="submit_button", on_click=submit_question, use_container_width=True)
             with col2:
-                if st.button("Clear History", key="clear_history_button"):
-                    st.session_state.conversation = []
-                    st.session_state.session_id = session_generator()
-                    st.session_state.feedback = {}
-                    st.experimental_rerun()
-            with col4:
-                submit_button = st.button("Submit", key="submit_button", on_click=submit_question)
+                with st.expander("Options", expanded=False):
+                    if st.button("Clear Input", key="clear_input_button", on_click=clear_input, use_container_width=True):
+                        pass
+                    if st.button("Clear History", key="clear_history_button", use_container_width=True):
+                        st.session_state.conversation = []
+                        st.session_state.session_id = session_generator()
+                        st.session_state.feedback = {}
+                        st.experimental_rerun()
 
         if reverse_rendering:
             with input_container:
