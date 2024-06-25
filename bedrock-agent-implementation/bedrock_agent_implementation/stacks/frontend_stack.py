@@ -93,7 +93,8 @@ class FrontendStack(Stack):
                                                                                  task_role=app_execute_role,
                                                                                  environment={
                                                                                      "BEDROCK_AGENT_ID": bedrock_agent_id,
-                                                                                     "BEDROCK_AGENT_ALIAS": bedrock_agent_alias
+                                                                                     "BEDROCK_AGENT_ALIAS": bedrock_agent_alias,
+                                                                                     "DYNAMODB_TABLE_NAME": self.chat_history_table.table_name
                                                                                  }
                                                                              ),
                                                                              task_subnets=ec2.SubnetSelection(

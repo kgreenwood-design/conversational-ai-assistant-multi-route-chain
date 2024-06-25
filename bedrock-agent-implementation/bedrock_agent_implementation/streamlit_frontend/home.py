@@ -78,7 +78,11 @@ if not BEDROCK_AGENT_ALIAS or not BEDROCK_AGENT_ID:
 try:
     bedrock_client = boto3.client('bedrock-agent-runtime')
     dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('ChatHistory')
+    table_name = os.environ.get('DYNAMODB_TABLE_NAME')
+    if not table_name:
+        st.error("DYNAMODB_TABLE_NAME environment variable is not set")
+        st.stop()
+    table = dynamodb.Table(table_name)
 except Exception as e:
     st.error("Error initializing AWS clients. Please check your credentials and environment settings.")
     logger.error(f"Error initializing AWS clients: {str(e)}")
@@ -167,21 +171,18 @@ def save_to_dynamodb(session_id, conversation, feedback=None, username=None):
 
 def ensure_dynamodb_table_exists():
     try:
-        table_name = 'ChatHistory'
+        table_name = os.environ.get('DYNAMODB_TABLE_NAME')
+        if not table_name:
+            logger.error("DYNAMODB_TABLE_NAME environment variable is not set")
+            return
+        
         existing_tables = dynamodb.meta.client.list_tables()['TableNames']
         if table_name not in existing_tables:
-            table = dynamodb.create_table(
-                TableName=table_name,
-                KeySchema=[{'AttributeName': 'id', 'KeyType': 'HASH'}],
-                AttributeDefinitions=[{'AttributeName': 'id', 'AttributeType': 'S'}],
-                ProvisionedThroughput={'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
-            )
-            table.meta.client.get_waiter('table_exists').wait(TableName=table_name)
-            logger.info(f"Table {table_name} created successfully.")
+            logger.error(f"Table {table_name} does not exist. It should be created by the CDK stack.")
         else:
-            logger.info(f"Table {table_name} already exists.")
+            logger.info(f"Table {table_name} exists.")
     except ClientError as e:
-        logger.error(f"Error ensuring DynamoDB table exists: {e}")
+        logger.error(f"Error checking DynamoDB table: {e}")
 
 def provide_feedback(message_index, feedback_type):
     st.session_state.feedback[message_index] = feedback_type
